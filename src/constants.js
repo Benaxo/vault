@@ -30,3 +30,4 @@ export const TOKEN_METADATA = {
 
 // Default token for deposits
 export const DEFAULT_TOKEN = SUPPORTED_TOKENS.ETH;
+ 

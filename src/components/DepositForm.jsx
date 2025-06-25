@@ -356,7 +356,11 @@ export const DepositForm = () => {
                   <img
                     src={metadata.logo}
                     alt={metadata.symbol}
-                    className="w-8 h-8 mx-auto mb-1"
+                    className={
+                      metadata.symbol === "ETH"
+                        ? "h-7 w-4 mx-auto mb-1"
+                        : "w-8 h-8 mx-auto mb-1"
+                    }
                   />
                   <div className="font-medium text-sm">{metadata.symbol}</div>
                   <div className="text-xs text-gray-500 mt-1">
@@ -414,7 +418,7 @@ export const DepositForm = () => {
                   <img
                     src="/Ethereum_logo.png"
                     alt="Ethereum Logo"
-                    className="h-7 w-7 inline-block align-middle mr-2"
+                    className="h-7 w-4 inline-block align-middle mr-2"
                   />
                 ) : (
                   currentTokenMetadata?.logo

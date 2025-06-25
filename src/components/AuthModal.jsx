@@ -90,7 +90,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-800">
-              {isSignUp ? "Create Account" : "Sign In"}
+              {isSignUp ? "Créer un compte" : "Se connecter"}
             </h2>
             <button
               onClick={onClose}
@@ -158,7 +158,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
                   htmlFor="displayName"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Full Name
+                  Nom complet
                 </label>
                 <input
                   type="text"
@@ -177,7 +177,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Email Address
+                Adresse email
               </label>
               <input
                 type="email"
@@ -195,7 +195,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
                 htmlFor="password"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Password
+                Mot de passe
               </label>
               <input
                 type="password"
@@ -217,9 +217,9 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div>
               ) : isSignUp ? (
-                "Create Account"
+                "Créer un compte"
               ) : (
-                "Sign In"
+                "Se connecter"
               )}
             </button>
           </form>
@@ -232,15 +232,15 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
               className="text-blue-600 hover:text-blue-700 font-medium"
             >
               {isSignUp
-                ? "Already have an account? Sign In"
-                : "Don't have an account? Sign Up"}
+                ? "Vous avez déjà un compte ? Se connecter"
+                : "Vous n'avez pas de compte ? Créer un compte"}
             </button>
           </div>
 
           {/* Info */}
           <div className="mt-4 text-xs text-gray-500 text-center">
-            By continuing, you agree to link your account with your wallet
-            address for a personalized savings experience.
+            En continuant, vous acceptez de lier votre compte avec votre adresse
+            de wallet pour une expérience d'épargne personnalisée.
           </div>
         </motion.div>
       </div>

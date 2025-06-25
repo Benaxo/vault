@@ -4,6 +4,7 @@ import logo from "../public/logo.jpeg";
 import AuthModal from "./components/AuthModal";
 import { DepositForm } from "./components/DepositForm";
 import Hero from "./components/Hero";
+import HeroC from "./components/HeroC";
 import PortfolioOverview from "./components/PortfolioOverview";
 import UserDropdown from "./components/UserDropdown";
 import WalletConnect from "./components/WalletConnect";
@@ -246,10 +247,10 @@ function App() {
   // Show loading while initializing
   if (isInitializing) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Initializing PiggyBank Vault...</p>
+          <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-300">Initialisation de PiggyBank Vault...</p>
         </div>
       </div>
     );
@@ -257,19 +258,19 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-black">
         {/* Header */}
-        <header className="bg-white shadow-sm">
+        <header className="bg-black shadow-sm border-b border-gray-800">
           <div className="container mx-auto flex justify-between items-center p-4">
             <div className="flex items-center">
               <img
                 src={logo}
                 alt="PiggyBank Vault Logo"
-                className="h-10 w-10 rounded-full cursor-pointer mr-2"
+                className="h-10 w-10 rounded-full cursor-pointer mr-2 border-2 border-cyan-500"
                 onClick={() => setShowHero(true)}
               />
               <span
-                className="text-xl font-bold text-blue-600 cursor-pointer"
+                className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent cursor-pointer"
                 onClick={() => setShowHero(true)}
               >
                 PiggyBank Vault
@@ -278,7 +279,8 @@ function App() {
 
             <div className="flex items-center space-x-4">
               {/* User Dropdown - When user has access */}
-              {hasAppAccess() && userProfile && (
+              {(user && userProfile) ||
+              (address && userProfile && userProfile.isAnonymous) ? (
                 <UserDropdown
                   userProfile={userProfile}
                   user={user}
@@ -289,14 +291,14 @@ function App() {
                   getUserDisplayName={getUserDisplayName}
                   handleLogout={handleLogout}
                 />
-              )}
+              ) : null}
 
               {/* Auth Actions - When no access */}
               {!hasAppAccess() && (
                 <div className="flex space-x-2">
                   <button
                     onClick={() => setIsAuthModalOpen(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow"
                   >
                     Sign In
                   </button>
@@ -310,29 +312,25 @@ function App() {
 
           {/* Quick Access Level Indicator - Only show if incomplete setup */}
           {hasAppAccess() && !hasFullAccess() && (
-            <div className="border-b border-gray-200 bg-gradient-to-r from-yellow-50 to-blue-50">
+            <div className="border-b border-gray-800 bg-gradient-to-r from-cyan-900/30 to-purple-900/30">
               <div className="container mx-auto px-4 py-2">
                 <div className="flex items-center justify-center">
                   <div className="flex items-center space-x-2 text-sm">
-                    <span className="text-yellow-600">⚠️</span>
-                    <span className="text-gray-700">
+                    <span className="text-yellow-400">⚠️</span>
+                    <span className="text-gray-200">
                       {user && !address
-                        ? "Connect your wallet to make transactions"
+                        ? "Connectez votre wallet pour effectuer des transactions"
                         : !user && address
-                        ? "Create an account to save your progress"
-                        : "Setup incomplete"}
+                        ? "Créez un compte pour sauvegarder votre progression"
+                        : "Configuration incomplète"}
                     </span>
                     <button
                       onClick={() => {
-                        if (user) {
-                          setIsAuthModalOpen(true);
-                        } else {
-                          setIsAuthModalOpen(true);
-                        }
+                        setIsAuthModalOpen(true);
                       }}
-                      className="text-blue-600 hover:text-blue-700 font-medium underline"
+                      className="text-cyan-400 hover:text-purple-400 font-medium underline"
                     >
-                      {user ? "Link Wallet" : "Create Account"}
+                      {user ? "Lier le Wallet" : "Créer un compte"}
                     </button>
                   </div>
                 </div>
@@ -345,7 +343,7 @@ function App() {
           {/* HERO PAGE PAR DEFAUT */}
           {showHero ? (
             <div className="mb-12">
-              <Hero setShowHero={setShowHero} />
+              <HeroC setShowHero={setShowHero} />
             </div>
           ) : (
             // APP PRINCIPALE
@@ -354,37 +352,37 @@ function App() {
               {hasAppAccess() && userProfile && (
                 <div className="mx-auto max-w-5xl">
                   {/* Tabs for different actions */}
-                  <div className="bg-white rounded-lg shadow-md overflow-hidden mb-8">
-                    <div className="flex border-b">
+                  <div className="bg-gray-900 rounded-lg shadow-md overflow-hidden mb-8 border border-gray-800">
+                    <div className="flex border-b border-gray-800">
                       <button
-                        className={`flex-1 py-4 px-6 text-center ${
+                        className={`flex-1 py-4 px-6 text-center font-semibold transition-colors ${
                           activeTab === "dashboard"
-                            ? "bg-blue-500 text-white"
-                            : "hover:bg-gray-100"
+                            ? "bg-gradient-to-r from-cyan-500 to-purple-500 text-white"
+                            : "hover:bg-gray-800 text-gray-300"
                         }`}
                         onClick={() => setActiveTab("dashboard")}
                       >
                         Dashboard
                       </button>
                       <button
-                        className={`flex-1 py-4 px-6 text-center ${
+                        className={`flex-1 py-4 px-6 text-center font-semibold transition-colors ${
                           activeTab === "deposit"
-                            ? "bg-blue-500 text-white"
-                            : "hover:bg-gray-100"
+                            ? "bg-gradient-to-r from-cyan-500 to-purple-500 text-white"
+                            : "hover:bg-gray-800 text-gray-300"
                         }`}
                         onClick={() => setActiveTab("deposit")}
                       >
-                        Deposit
+                        Dépôt
                       </button>
                       <button
-                        className={`flex-1 py-4 px-6 text-center ${
+                        className={`flex-1 py-4 px-6 text-center font-semibold transition-colors ${
                           activeTab === "withdraw"
-                            ? "bg-blue-500 text-white"
-                            : "hover:bg-gray-100"
+                            ? "bg-gradient-to-r from-cyan-500 to-purple-500 text-white"
+                            : "hover:bg-gray-800 text-gray-300"
                         }`}
                         onClick={() => setActiveTab("withdraw")}
                       >
-                        Withdraw
+                        Retrait
                       </button>
                     </div>
                     <div className="p-4">{renderTabContent()}</div>
@@ -397,7 +395,7 @@ function App() {
                   <Hero setShowHero={setShowHero} />
                   <div className="mt-8 text-center space-y-4">
                     <button
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold text-lg shadow-lg transition-colors"
+                      className="bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-white px-6 py-3 rounded-lg font-bold text-lg shadow-lg transition-colors"
                       onClick={() => setIsAuthModalOpen(true)}
                     >
                       Sign In
@@ -416,14 +414,14 @@ function App() {
           onSuccess={handleAuthSuccess}
         />
 
-        <footer className="bg-gray-800 text-white py-6 mt-16">
+        <footer className="bg-black text-white py-6 mt-16 border-t border-gray-800">
           <div className="container mx-auto px-4 text-center">
             <p>
-              PiggyBank Vault - A decentralized savings application on Sepolia
-              testnet
+              PiggyBank Vault - Une application d'épargne décentralisée sur
+              Sepolia testnet
             </p>
             <p className="mt-2 text-gray-400 text-sm">
-              This is a demo project. Do not use with real funds.
+              Ceci est un projet démo. N'utilisez pas de fonds réels.
             </p>
           </div>
         </footer>

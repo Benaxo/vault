@@ -16,31 +16,31 @@ export const WithdrawForm = () => {
   const { user } = useAuth();
   const [userGoals, setUserGoals] = useState([]);
   const [selectedGoalId, setSelectedGoalId] = useState(null);
-  const [amount, setAmount] = useState("");
-  const [isEarlyWithdrawal, setIsEarlyWithdrawal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  // Get selected goal details from blockchain
-  const { data: goalBasics } = useContractRead({
+  // Get selected goal details from blockchain using the new contract functions
+  const { data: goalDetails } = useContractRead({
     address: CONTRACT_ADDRESS,
     abi: PiggyBankVaultABI,
-    functionName: "getGoalBasics",
+    functionName: "getGoalDetails",
     args: [selectedGoalId],
     enabled: Boolean(selectedGoalId),
   });
 
-  const { data: goalDescription } = useContractRead({
+  const { data: canWithdrawResult } = useContractRead({
     address: CONTRACT_ADDRESS,
     abi: PiggyBankVaultABI,
-    functionName: "getGoalDescription",
+    functionName: "canWithdraw",
     args: [selectedGoalId],
     enabled: Boolean(selectedGoalId),
   });
 
-  const { data: isGoalReached } = useContractRead({
+  const { data: goalProgress } = useContractRead({
     address: CONTRACT_ADDRESS,
     abi: PiggyBankVaultABI,
-    functionName: "isGoalReached",
+    functionName: "getGoalProgress",
     args: [selectedGoalId],
     enabled: Boolean(selectedGoalId),
   });
@@ -49,27 +49,31 @@ export const WithdrawForm = () => {
   useEffect(() => {
     console.log("🔍 WithdrawForm Debug Info:");
     console.log("- selectedGoalId:", selectedGoalId);
-    console.log("- goalBasics:", goalBasics);
-    console.log("- goalDescription:", goalDescription);
-    console.log("- isGoalReached:", isGoalReached);
+    console.log("- goalDetails:", goalDetails);
+    console.log("- canWithdrawResult:", canWithdrawResult);
+    console.log("- goalProgress:", goalProgress);
     console.log("- userGoals:", userGoals);
     console.log("- address:", address);
 
-    if (goalBasics) {
-      console.log("📊 Goal Basics Details:");
-      console.log("- balance (index 0):", goalBasics[0]?.toString());
-      console.log("- goalType (index 1):", goalBasics[1]?.toString());
-      console.log("- targetValue (index 2):", goalBasics[2]?.toString());
-      console.log("- currency (index 3):", goalBasics[3]?.toString());
-      console.log("- unlockTimestamp (index 4):", goalBasics[4]?.toString());
-      console.log("- owner (index 5):", goalBasics[5]);
-      console.log("- isActive (index 6):", goalBasics[6]);
+    if (goalDetails) {
+      console.log("📊 Goal Details:");
+      console.log("- balance:", goalDetails[0]?.toString());
+      console.log("- goalType:", goalDetails[1]?.toString());
+      console.log("- targetValue:", goalDetails[2]?.toString());
+      console.log("- currency:", goalDetails[3]?.toString());
+      console.log("- unlockTimestamp:", goalDetails[4]?.toString());
+      console.log("- owner:", goalDetails[5]);
+      console.log("- isActive:", goalDetails[6]);
+      console.log("- description:", goalDetails[7]);
+      console.log("- createdAt:", goalDetails[8]?.toString());
+      console.log("- isCompleted:", goalDetails[9]);
+      console.log("- completedAt:", goalDetails[10]?.toString());
     }
   }, [
     selectedGoalId,
-    goalBasics,
-    goalDescription,
-    isGoalReached,
+    goalDetails,
+    canWithdrawResult,
+    goalProgress,
     userGoals,
     address,
   ]);
@@ -96,14 +100,11 @@ export const WithdrawForm = () => {
         const withdrawableGoals = goals.filter((goal) => {
           const hasBlockchainId = Boolean(goal.blockchainGoalId);
           const isActive = Boolean(goal.isActive);
-          const hasBalance = parseFloat(goal.currentBalance || 0) > 0;
 
           console.log(`📋 Goal ${goal.id} filter check:`, {
             hasBlockchainId,
             isActive,
-            hasBalance,
             blockchainGoalId: goal.blockchainGoalId,
-            currentBalance: goal.currentBalance,
             description: goal.description,
           });
 
@@ -129,44 +130,21 @@ export const WithdrawForm = () => {
     loadGoals();
   }, [user, address, selectedGoalId]);
 
-  // Contract writes
+  // Contract write for withdrawal
   const { data: withdrawData, write: withdrawWrite } = useContractWrite({
     address: CONTRACT_ADDRESS,
     abi: PiggyBankVaultABI,
     functionName: "withdraw",
-    args: [selectedGoalId],
-    enabled: Boolean(selectedGoalId),
   });
 
-  const { data: earlyWithdrawData, write: earlyWithdrawWrite } =
-    useContractWrite({
-      address: CONTRACT_ADDRESS,
-      abi: PiggyBankVaultABI,
-      functionName: "withdrawEarly",
-      args: [
-        selectedGoalId,
-        amount ? BigInt(parseFloat(amount) * 1e18) : BigInt(0),
-      ],
-      enabled: Boolean(selectedGoalId && amount),
-    });
-
-  // Wait for transactions
-  const { isLoading: isConfirmingWithdraw, isSuccess: isWithdrawSuccess } =
-    useWaitForTransaction({
-      hash: withdrawData?.hash,
-    });
-
-  const {
-    isLoading: isConfirmingEarlyWithdraw,
-    isSuccess: isEarlyWithdrawSuccess,
-  } = useWaitForTransaction({
-    hash: earlyWithdrawData?.hash,
+  // Wait for transaction
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransaction({
+    hash: withdrawData?.hash,
+    onSuccess: () => {
+      setSuccess("Retrait effectué avec succès !");
+      setError("");
+    },
   });
-
-  // Combined loading and success states
-  const isTransactionLoading =
-    isConfirmingWithdraw || isConfirmingEarlyWithdraw;
-  const isSuccess = isWithdrawSuccess || isEarlyWithdrawSuccess;
 
   // Format the ETH balance
   const formatEth = (wei) => {
@@ -180,12 +158,12 @@ export const WithdrawForm = () => {
 
   // Calculate time remaining until unlock
   const getTimeRemaining = () => {
-    if (!goalBasics || !goalBasics[4]) {
-      console.log("⏰ No goalBasics or unlockTimestamp");
+    if (!goalDetails || !goalDetails[4]) {
+      console.log("⏰ No goalDetails or unlockTimestamp");
       return null;
     }
 
-    const unlockTime = Number(goalBasics[4]);
+    const unlockTime = Number(goalDetails[4]);
     const now = Math.floor(Date.now() / 1000);
 
     console.log("⏰ Time calculation:");
@@ -193,80 +171,97 @@ export const WithdrawForm = () => {
     console.log("- current time:", now);
     console.log("- difference:", unlockTime - now);
 
-    if (now >= unlockTime) return "Available to withdraw";
+    if (now >= unlockTime) return "Disponible pour retrait";
 
     const secondsRemaining = unlockTime - now;
     const days = Math.floor(secondsRemaining / 86400);
     const hours = Math.floor((secondsRemaining % 86400) / 3600);
+    const minutes = Math.floor((secondsRemaining % 3600) / 60);
 
-    return `${days} days, ${hours} hours remaining`;
+    if (days > 0) {
+      return `${days} jour(s), ${hours} heure(s) restantes`;
+    } else if (hours > 0) {
+      return `${hours} heure(s), ${minutes} minute(s) restantes`;
+    } else {
+      return `${minutes} minute(s) restantes`;
+    }
   };
 
   // Check if withdrawal is allowed
   const isWithdrawalAllowed = () => {
-    if (!goalBasics) {
-      console.log("🚫 No goalBasics for withdrawal check");
-      return false;
-    }
-    const unlockTime = Number(goalBasics[4]);
-    const now = Math.floor(Date.now() / 1000);
-    const allowed = now >= unlockTime;
-    console.log("🚫 Withdrawal allowed:", allowed);
-    return allowed;
+    if (!canWithdrawResult) return false;
+    return canWithdrawResult[0]; // First element is the boolean
   };
 
-  // Calculate penalty amount (10% penalty for early withdrawal)
-  const calculatePenalty = () => {
-    if (!amount || !goalBasics) return "0";
-    const penalty = Number(amount) * 0.1;
-    return penalty.toFixed(4);
+  // Get withdrawal reason
+  const getWithdrawalReason = () => {
+    if (!canWithdrawResult) return "Vérification en cours...";
+    return canWithdrawResult[1]; // Second element is the reason string
   };
 
-  // Get max withdrawable amount
+  // Get max amount for withdrawal
   const getMaxAmount = () => {
-    if (!goalBasics) {
-      console.log("💸 No goalBasics for max amount");
-      return 0;
-    }
-    const maxAmount = parseFloat(formatEth(goalBasics[0]));
-    console.log("💸 Max withdrawable amount:", maxAmount);
-    return maxAmount;
+    if (!goalDetails) return "0";
+    return formatEth(goalDetails[0]); // balance
   };
 
-  // Find matching Firebase goal for additional info
+  // Get matching Firebase goal
   const getMatchingFirebaseGoal = () => {
     return userGoals.find((goal) => goal.blockchainGoalId === selectedGoalId);
   };
 
-  // Handle form submission
+  // Handle withdrawal submission
   const handleSubmit = (e) => {
     e.preventDefault();
 
     if (!selectedGoalId) {
-      alert("Please select a goal to withdraw from");
+      setError("Veuillez sélectionner un objectif");
       return;
     }
 
-    if (isEarlyWithdrawal) {
-      if (!amount || parseFloat(amount) <= 0) {
-        alert("Please enter a valid amount");
-        return;
-      }
-      if (parseFloat(amount) > getMaxAmount()) {
-        alert("Amount exceeds available balance");
-        return;
-      }
-      if (earlyWithdrawWrite) {
-        earlyWithdrawWrite();
-      }
-    } else {
-      if (!isWithdrawalAllowed()) {
-        alert("Your goal hasn't reached its unlock date yet");
-        return;
-      }
-      if (withdrawWrite) {
-        withdrawWrite();
-      }
+    if (!isWithdrawalAllowed()) {
+      setError(getWithdrawalReason());
+      return;
+    }
+
+    if (!withdrawWrite) {
+      setError("Fonction de retrait non disponible");
+      return;
+    }
+
+    try {
+      setError("");
+      setSuccess("");
+
+      console.log("🔍 Attempting withdrawal for goal:", selectedGoalId);
+      withdrawWrite({
+        args: [selectedGoalId],
+      });
+    } catch (error) {
+      console.error("Error calling withdraw:", error);
+      setError("Erreur lors du retrait: " + error.message);
+    }
+  };
+
+  // Get goal type description
+  const getGoalTypeDescription = () => {
+    if (!goalDetails) return "";
+
+    const goalType = Number(goalDetails[1]);
+    const targetValue = goalDetails[2];
+    const currency = Number(goalDetails[3]);
+
+    switch (goalType) {
+      case 0: // ETH_AMOUNT
+        return `Objectif: ${formatEth(targetValue)} ETH`;
+      case 1: // ETH_PRICE
+        const price = (Number(targetValue) / 1e8).toFixed(2);
+        return `Prix cible: $${price} ${currency === 0 ? "USD" : "EUR"}`;
+      case 2: // PORTFOLIO_VALUE
+        const value = (Number(targetValue) / 1e8).toFixed(2);
+        return `Valeur cible: $${value} ${currency === 0 ? "USD" : "EUR"}`;
+      default:
+        return "Type d'objectif inconnu";
     }
   };
 
@@ -292,346 +287,225 @@ export const WithdrawForm = () => {
     },
   };
 
+  if (isLoading) {
+    return (
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="bg-white rounded-xl shadow-lg p-6"
+      >
+        <div className="text-center py-8">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement des objectifs...</p>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="bg-white shadow-xl rounded-lg p-8 max-w-2xl mx-auto"
+      className="bg-white rounded-xl shadow-lg p-6"
     >
       <motion.h2
         variants={itemVariants}
-        className="text-3xl font-bold text-gray-800 mb-6 flex items-center"
+        className="text-2xl font-bold mb-6 text-gray-800 flex items-center"
       >
-        <span className="mr-3">💸</span> Withdraw Funds
+        <span className="mr-3">💸</span>
+        Retirer des Fonds
       </motion.h2>
 
-      {!address ? (
-        <motion.p
+      {userGoals.length === 0 ? (
+        <motion.div
           variants={itemVariants}
-          className="text-gray-600 text-center py-8"
+          className="text-center py-8 text-gray-600"
         >
-          Please connect your wallet to withdraw funds.
-        </motion.p>
-      ) : isLoading ? (
-        <motion.div variants={itemVariants} className="text-center py-8">
-          <div className="flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
-            Loading your goals...
-          </div>
-        </motion.div>
-      ) : userGoals.length === 0 ? (
-        <motion.div variants={itemVariants} className="text-center py-8">
-          <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-6 rounded">
-            <p className="font-bold">No Withdrawable Goals</p>
-            <p>You don't have any goals with funds available for withdrawal.</p>
-            <p className="mt-2 text-sm">
-              Create goals and make deposits to start saving!
-            </p>
-          </div>
+          <p className="mb-4">Aucun objectif disponible pour le retrait.</p>
+          <p className="text-sm">
+            Créez d'abord un objectif et effectuez des dépôts pour pouvoir
+            retirer.
+          </p>
         </motion.div>
       ) : (
         <>
           {/* Goal Selection */}
-          {userGoals.length > 1 && (
-            <motion.div variants={itemVariants} className="mb-6">
-              <h3 className="font-bold text-gray-800 mb-3 text-lg">
-                Select Goal to Withdraw From
-              </h3>
-              <div className="grid gap-3">
-                {userGoals.map((goal) => (
-                  <motion.button
-                    key={goal.id}
-                    whileHover={{ scale: 1.02 }}
-                    className={`p-4 border-2 rounded-lg text-left transition-all ${
-                      selectedGoalId === goal.blockchainGoalId
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                    onClick={() => setSelectedGoalId(goal.blockchainGoalId)}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-medium text-gray-800">
-                          {goal.description || "Savings Goal"}
-                        </h4>
-                        <p className="text-sm text-gray-600">
-                          Balance: {goal.currentBalance || "0"} ETH
-                        </p>
+          <motion.div variants={itemVariants} className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Sélectionner un objectif
+            </label>
+            <select
+              value={selectedGoalId || ""}
+              onChange={(e) =>
+                setSelectedGoalId(
+                  e.target.value ? Number(e.target.value) : null
+                )
+              }
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Choisir un objectif...</option>
+              {userGoals.map((goal) => (
+                <option key={goal.id} value={goal.blockchainGoalId}>
+                  {goal.description || "Objectif d'épargne"} -{" "}
+                  {goal.blockchainGoalId}
+                </option>
+              ))}
+            </select>
+          </motion.div>
+
+          {/* Goal Details */}
+          {selectedGoalId && goalDetails && (
+            <motion.div variants={itemVariants} className="space-y-6">
+              {/* Goal Information */}
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h3 className="font-semibold text-gray-800 mb-2">
+                  Détails de l'objectif
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Description:</span>
+                    <span className="font-medium">
+                      {goalDetails[7] || "Aucune description"}
+                    </span>
+                  </div>
+            <div className="flex justify-between">
+                    <span className="text-gray-600">Type:</span>
+                    <span className="font-medium">
+                      {getGoalTypeDescription()}
+              </span>
             </div>
-                      <div
-                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                          selectedGoalId === goal.blockchainGoalId
-                            ? "border-blue-500 bg-blue-500"
-                            : "border-gray-300"
-                        }`}
-              >
-                        {selectedGoalId === goal.blockchainGoalId && (
-                          <div className="w-2 h-2 bg-white rounded-full"></div>
-                        )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Progression:</span>
+                    <span className="font-medium">
+                      {goalProgress ? `${goalProgress}%` : "Calcul..."}
+              </span>
+                  </div>
+                  {goalDetails[4] > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Déblocage:</span>
+                      <span className="font-medium">{getTimeRemaining()}</span>
+                    </div>
+                  )}
             </div>
           </div>
-                  </motion.button>
-                ))}
-              </div>
-            </motion.div>
-          )}
 
-          {/* Goal Status */}
-          {selectedGoalId && (
-            <motion.div
-              variants={itemVariants}
-              className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg"
-            >
-              <h3 className="font-bold text-gray-800 mb-4 text-lg">
-                {getMatchingFirebaseGoal()?.description ||
-                  goalDescription ||
-                  "Goal"}{" "}
-                Status
-              </h3>
-
-              {/* Debug info */}
-              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs text-gray-600">
-                <strong>Debug Info:</strong>
-                <br />
-                Selected Goal ID: {selectedGoalId}
-                <br />
-                Goal Basics Available: {goalBasics ? "Yes" : "No"}
-                <br />
-                {goalBasics && (
-                  <>
-                    Raw Balance: {goalBasics[0]?.toString() || "undefined"}
-                    <br />
-                    Raw Timestamp: {goalBasics[4]?.toString() || "undefined"}
-                    <br />
-                    Goal Type: {goalBasics[1]?.toString() || "undefined"}
-                    <br />
-                    Is Active: {goalBasics[6]?.toString() || "undefined"}
-                    <br />
-                    Owner: {goalBasics[5] || "undefined"}
-                  </>
-                )}
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <span className="text-gray-600 block mb-1">
-                    Current Balance
-                  </span>
-                  <span className="text-2xl font-bold text-blue-600">
-                    {goalBasics ? formatEth(goalBasics[0]) : "Loading..."} ETH
-                  </span>
-                  {!goalBasics && (
-                    <div className="text-sm text-gray-500 mt-1">
-                      Waiting for blockchain data...
-                    </div>
-                  )}
+              {/* Balance Information */}
+              <div className="bg-green-50 rounded-lg p-4">
+                <h3 className="font-semibold text-gray-800 mb-2">
+                  Solde disponible
+                </h3>
+                <div className="text-2xl font-bold text-green-600">
+                  {getMaxAmount()} ETH
                 </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <span className="text-gray-600 block mb-1">
-                    Time Remaining
-                  </span>
-                  <span className="text-2xl font-bold text-purple-600">
-                    {goalBasics
-                      ? getTimeRemaining() || "Not set"
-                      : "Loading..."}
-                  </span>
-                  {!goalBasics && (
-                    <div className="text-sm text-gray-500 mt-1">
-                      Waiting for blockchain data...
-                    </div>
-                  )}
-                </div>
+                <p className="text-sm text-gray-600 mt-1">
+                  Montant total déposé dans cet objectif
+                </p>
               </div>
-            </motion.div>
-          )}
 
-          {/* Withdrawal Options */}
-          <motion.div variants={itemVariants} className="mb-8">
-            <h3 className="font-bold text-gray-800 mb-4 text-lg">
-              Withdrawal Options
-            </h3>
-
-            {/* Withdrawal Type Selection */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`p-4 rounded-lg text-center transition-colors ${
-                  !isEarlyWithdrawal
-                    ? "bg-green-600 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              {/* Withdrawal Status */}
+              <div
+                className={`rounded-lg p-4 ${
+                  isWithdrawalAllowed()
+                    ? "bg-green-50 border border-green-200"
+                    : "bg-yellow-50 border border-yellow-200"
                 }`}
-                onClick={() => setIsEarlyWithdrawal(false)}
               >
-                <div className="text-lg font-bold mb-1">Regular Withdrawal</div>
-                <div className="text-sm opacity-80">
-                  Available when goal is reached
-                </div>
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`p-4 rounded-lg text-center transition-colors ${
-                  isEarlyWithdrawal
-                    ? "bg-yellow-600 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-                onClick={() => setIsEarlyWithdrawal(true)}
-              >
-                <div className="text-lg font-bold mb-1">Early Withdrawal</div>
-                <div className="text-sm opacity-80">10% penalty applies</div>
-              </motion.button>
-            </div>
-
-            {/* Withdrawal Form */}
-            <motion.form
-              variants={itemVariants}
-              onSubmit={handleSubmit}
-              className="space-y-6"
-            >
-              {isEarlyWithdrawal && (
-                <div>
-                  <label
-                    htmlFor="amount"
-                    className="block text-gray-700 text-sm font-bold mb-2"
+                <h3 className="font-semibold text-gray-800 mb-2">
+                  Statut du retrait
+                </h3>
+                <div className="flex items-center">
+                  <span
+                    className={`text-2xl mr-3 ${
+                      isWithdrawalAllowed()
+                        ? "text-green-500"
+                        : "text-yellow-500"
+                    }`}
                   >
-                    Amount to Withdraw (ETH)
-                  </label>
-                  <div className="relative">
-                  <input
-                    type="number"
-                    id="amount"
-                      className="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                      placeholder={`Max: ${formatEth(goalBasics?.[0])}`}
-                    step="0.01"
-                    min="0"
-                      max={formatEth(goalBasics?.[0])}
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                      disabled={isTransactionLoading}
-                  />
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                      <span className="text-gray-500">ETH</span>
-                    </div>
-                  </div>
-
-                  {/* Penalty Warning */}
-                  {amount && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700 rounded-lg"
+                    {isWithdrawalAllowed() ? "✅" : "⏳"}
+                  </span>
+                  <div>
+                    <p
+                      className={`font-medium ${
+                        isWithdrawalAllowed()
+                          ? "text-green-800"
+                          : "text-yellow-800"
+                      }`}
                     >
-                      <div className="flex items-center">
-                        <span className="text-2xl mr-3">⚠️</span>
-                        <div>
-                          <p className="font-bold">Early Withdrawal Penalty</p>
-                          <p>
-                            You will be charged {calculatePenalty()} ETH (10%)
-                            as a penalty.
-                          </p>
-                          <p className="mt-1 text-sm">
-                            You will receive:{" "}
-                            {(
-                              Number(amount) - Number(calculatePenalty())
-                            ).toFixed(4)}{" "}
-                            ETH
-                          </p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
+                      {isWithdrawalAllowed()
+                        ? "Retrait autorisé"
+                        : "Retrait en attente"}
+                    </p>
+                    <p
+                      className={`text-sm ${
+                        isWithdrawalAllowed()
+                          ? "text-green-700"
+                          : "text-yellow-700"
+                      }`}
+                    >
+                      {getWithdrawalReason()}
+                    </p>
+                  </div>
                 </div>
+              </div>
+
+              {/* Error and Success Messages */}
+              {error && (
+                <motion.div
+                  variants={itemVariants}
+                  className="p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg"
+                >
+                  {error}
+                </motion.div>
               )}
 
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              type="submit"
-                className={`w-full ${
-                  isEarlyWithdrawal
-                    ? "bg-yellow-600 hover:bg-yellow-700"
-                    : "bg-green-600 hover:bg-green-700"
-                } text-white font-bold py-3 px-6 rounded-lg transition-colors ${
-                  isTransactionLoading || (!isEarlyWithdrawal && !isGoalReached)
-                  ? "opacity-50 cursor-not-allowed"
-                  : ""
-              }`}
-              disabled={
-                  isTransactionLoading || (!isEarlyWithdrawal && !isGoalReached)
-                }
-              >
-                {isTransactionLoading ? (
-                  <div className="flex items-center justify-center">
-                    <svg
-                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Processing...
-                  </div>
-                ) : isEarlyWithdrawal ? (
-                  "Withdraw with Penalty"
-                ) : (
-                  "Withdraw Funds"
-                )}
-              </motion.button>
-
-            {isSuccess && (
+              {success && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-4 bg-green-100 text-green-700 rounded-lg"
+                  variants={itemVariants}
+                  className="p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg"
                 >
-                  <div className="flex items-center">
-                    <span className="text-2xl mr-3">🎉</span>
-                    <div>
-                      <p className="font-bold">Withdrawal Successful!</p>
-                      <p>Your funds have been sent to your wallet.</p>
-                    </div>
-              </div>
+                  {success}
                 </motion.div>
-            )}
-            </motion.form>
-          </motion.div>
+              )}
 
-          {/* Tips Section */}
-          <motion.div
-            variants={itemVariants}
-            className="bg-gray-50 p-6 rounded-lg"
-          >
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">
-              💡 Withdrawal Tips
-            </h3>
-            <ul className="space-y-2 text-gray-600">
-              <li>
-                • Regular withdrawals are available when you reach your goal
-              </li>
-              <li>• Early withdrawals come with a 10% penalty</li>
-              <li>• Make sure you have enough ETH for gas fees</li>
-              <li>
-                • You can withdraw your entire balance or a partial amount
-              </li>
-            </ul>
-          </motion.div>
+              {/* Withdrawal Button */}
+              <motion.button
+                variants={itemVariants}
+                onClick={handleSubmit}
+              disabled={
+                  !isWithdrawalAllowed() || isConfirming || !withdrawWrite
+                }
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-3 px-4 rounded-lg transition duration-200 transform hover:scale-105 disabled:hover:scale-100"
+              >
+                {isConfirming
+                  ? "Confirmation en cours..."
+                  : isWithdrawalAllowed()
+                  ? `Retirer ${getMaxAmount()} ETH`
+                  : "Retrait non autorisé"}
+              </motion.button>
+            </motion.div>
+          )}
+
+          {!selectedGoalId && (
+            <motion.div
+              variants={itemVariants}
+              className="text-center py-8 text-gray-600"
+            >
+              Sélectionnez un objectif pour voir les détails et effectuer un
+              retrait.
+            </motion.div>
+          )}
         </>
+      )}
+
+      {!address && (
+        <motion.div
+          variants={itemVariants}
+          className="text-center py-8 text-gray-600"
+        >
+          Connectez votre wallet pour effectuer un retrait.
+        </motion.div>
       )}
     </motion.div>
   );

@@ -21,26 +21,18 @@
         "name": "_eurUsdPriceFeed",
         "type": "address",
         "internalType": "address"
-      }
-    ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "addLoyaltyReward",
-    "inputs": [
+      },
       {
-        "name": "_user",
+        "name": "_governanceToken",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "_reward",
-        "type": "uint256",
-        "internalType": "uint256"
+        "name": "_owner",
+        "type": "address",
+        "internalType": "address"
       }
     ],
-    "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
@@ -156,45 +148,6 @@
   },
   {
     "type": "function",
-    "name": "dcaConfigs",
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "amount",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "interval",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "maxIterations",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "iterationCount",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "lastTimestamp",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "deactivateGoal",
     "inputs": [
       {
@@ -223,25 +176,6 @@
     ],
     "outputs": [],
     "stateMutability": "payable"
-  },
-  {
-    "type": "function",
-    "name": "earlyWithdrawalFees",
-    "inputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -309,45 +243,6 @@
   },
   {
     "type": "function",
-    "name": "getDCAConfig",
-    "inputs": [
-      {
-        "name": "goalId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "amount",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "interval",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "maxIterations",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "iterationCount",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "lastTimestamp",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "getEthPriceUsd",
     "inputs": [],
     "outputs": [
@@ -393,7 +288,7 @@
   },
   {
     "type": "function",
-    "name": "getGoalBasics",
+    "name": "getGoalDetails",
     "inputs": [
       {
         "name": "goalId",
@@ -436,25 +331,26 @@
         "name": "isActive",
         "type": "bool",
         "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getGoalDescription",
-    "inputs": [
+      },
       {
-        "name": "goalId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
+        "name": "description",
         "type": "string",
         "internalType": "string"
+      },
+      {
+        "name": "createdAt",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "isCompleted",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "completedAt",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -518,35 +414,6 @@
   },
   {
     "type": "function",
-    "name": "getPriceConfig",
-    "inputs": [
-      {
-        "name": "goalId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "targetPrice",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "stopBuyPrice",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "targetToken",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "getTokenPrice",
     "inputs": [
       {
@@ -579,6 +446,72 @@
         "name": "",
         "type": "uint256[]",
         "internalType": "uint256[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getUserScore",
+    "inputs": [
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getUserStats",
+    "inputs": [
+      {
+        "name": "user",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "goalsCreated",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "goalsCompleted",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "totalDeposited",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "currentScore",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "governanceToken",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IPiggyGovernanceToken"
       }
     ],
     "stateMutability": "view"
@@ -661,59 +594,11 @@
   },
   {
     "type": "function",
-    "name": "loyaltyRewards",
-    "inputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "owner",
     "inputs": [],
     "outputs": [
       {
         "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "priceConfigs",
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "targetPrice",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "stopBuyPrice",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "targetToken",
         "type": "address",
         "internalType": "address"
       }
@@ -748,51 +633,10 @@
   },
   {
     "type": "function",
-    "name": "setStopBuyPrice",
+    "name": "setGovernanceToken",
     "inputs": [
       {
-        "name": "goalId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_price",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setTargetPrice",
-    "inputs": [
-      {
-        "name": "goalId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_price",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setTargetToken",
-    "inputs": [
-      {
-        "name": "goalId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_token",
+        "name": "_governanceToken",
         "type": "address",
         "internalType": "address"
       }
@@ -820,66 +664,12 @@
   },
   {
     "type": "function",
-    "name": "setupDCA",
-    "inputs": [
-      {
-        "name": "goalId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_amount",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_interval",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_maxIterations",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "transferOwnership",
     "inputs": [
       {
         "name": "newOwner",
         "type": "address",
         "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "triggerDCA",
-    "inputs": [
-      {
-        "name": "goalId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "triggerSale",
-    "inputs": [
-      {
-        "name": "goalId",
-        "type": "uint256",
-        "internalType": "uint256"
       }
     ],
     "outputs": [],
@@ -922,6 +712,40 @@
     "outputs": [
       {
         "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "userStats",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "goalsCreated",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "goalsCompleted",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "totalDeposited",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "currentScore",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -978,6 +802,21 @@
         "name": "description",
         "type": "string",
         "internalType": "string"
+      },
+      {
+        "name": "createdAt",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "isCompleted",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "completedAt",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -994,86 +833,6 @@
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "withdrawEarly",
-    "inputs": [
-      {
-        "name": "goalId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_amount",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "event",
-    "name": "DCASetup",
-    "inputs": [
-      {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "goalId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "interval",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "DCATriggered",
-    "inputs": [
-      {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "goalId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "iteration",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
   },
   {
     "type": "event",
@@ -1093,37 +852,6 @@
       },
       {
         "name": "amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "EarlyWithdrawal",
-    "inputs": [
-      {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "goalId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "fee",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -1170,31 +898,6 @@
   },
   {
     "type": "event",
-    "name": "GoalCreatedWithDescription",
-    "inputs": [
-      {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "goalId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "description",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
     "name": "GoalReached",
     "inputs": [
       {
@@ -1211,25 +914,6 @@
       },
       {
         "name": "totalAmount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "LoyaltyRewardAdded",
-    "inputs": [
-      {
-        "name": "user",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      },
-      {
-        "name": "reward",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -1258,81 +942,6 @@
   },
   {
     "type": "event",
-    "name": "SaleTriggered",
-    "inputs": [
-      {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "goalId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "StopBuySet",
-    "inputs": [
-      {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "goalId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "price",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "TargetPriceSet",
-    "inputs": [
-      {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "goalId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "price",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
     "name": "TokenAllowed",
     "inputs": [
       {
@@ -1346,31 +955,6 @@
         "type": "address",
         "indexed": false,
         "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "UnlockTimestampSet",
-    "inputs": [
-      {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "goalId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "timestamp",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
       }
     ],
     "anonymous": false

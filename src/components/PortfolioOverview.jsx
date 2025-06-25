@@ -479,36 +479,48 @@ const GoalProgressCard = ({ goal, ethPrice }) => {
       try {
         if (goal.goalType === "ETH_PRICE") {
           const result = await calculatePriceGoalProgress(
-            goal.targetValue,
-            goal.currency.toLowerCase()
+            goal.targetValue || 0,
+            goal.currency?.toLowerCase() || "usd"
           );
           setProgress(result.progress);
           setCurrentValue(
-            formatPrice(result.currentPrice, goal.currency.toLowerCase())
+            formatPrice(
+              result.currentPrice || 0,
+              goal.currency?.toLowerCase() || "usd"
+            )
           );
           setTargetDisplay(
-            `${formatPrice(goal.targetValue, goal.currency.toLowerCase())}/ETH`
+            `${formatPrice(
+              goal.targetValue || 0,
+              goal.currency?.toLowerCase() || "usd"
+            )}/ETH`
           );
           setIsReached(result.isReached);
         } else if (goal.goalType === "PORTFOLIO_VALUE") {
           const ethBalance = parseFloat(goal.currentBalance || 0);
           const result = await calculatePortfolioGoalProgress(
             ethBalance,
-            goal.targetValue,
-            goal.currency.toLowerCase()
+            goal.targetValue || 0,
+            goal.currency?.toLowerCase() || "usd"
           );
           setProgress(result.progress);
           setCurrentValue(
-            formatPrice(result.currentValue, goal.currency.toLowerCase())
+            formatPrice(
+              result.currentValue || 0,
+              goal.currency?.toLowerCase() || "usd"
+            )
           );
           setTargetDisplay(
-            formatPrice(goal.targetValue, goal.currency.toLowerCase())
+            formatPrice(
+              goal.targetValue || 0,
+              goal.currency?.toLowerCase() || "usd"
+            )
           );
           setIsReached(result.isReached);
         } else {
           // ETH_AMOUNT (legacy)
           const current = parseFloat(goal.currentBalance || 0);
-          const target = parseFloat(goal.goalAmount);
+          const target = parseFloat(goal.goalAmount || 0);
           const prog = target > 0 ? (current / target) * 100 : 0;
           setProgress(Math.min(prog, 100));
           setCurrentValue(`${current.toFixed(4)} ETH`);

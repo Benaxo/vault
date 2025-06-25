@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import React from "react";
 
-const Hero = () => {
+const Hero = ({ setShowHero }) => {
   const stats = [
     { value: "100+", label: "Active Savers" },
     { value: "500+", label: "ETH Saved" },
@@ -64,6 +64,7 @@ const Hero = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="bg-yellow-400 text-blue-900 font-bold py-4 px-8 rounded-full hover:bg-yellow-300 transition-colors shadow-lg"
+                  onClick={() => setShowHero(false)}
                 >
                   Start Your Journey
                 </motion.button>

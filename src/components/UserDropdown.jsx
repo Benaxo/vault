@@ -1,5 +1,7 @@
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
+import { useAccount, useBalance } from "wagmi";
 
 const UserDropdown = ({
   userProfile,
@@ -47,6 +49,10 @@ const UserDropdown = ({
   };
 
   const connectionStatus = getConnectionStatus();
+
+  // Infos wallet via wagmi
+  const { address: wagmiAddress, isConnected } = useAccount();
+  const { data: balanceData } = useBalance({ address: wagmiAddress });
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -171,12 +177,17 @@ const UserDropdown = ({
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-700">Wallet:</span>
                   <div className="flex items-center space-x-1">
-                    {address ? (
+                    {wagmiAddress ? (
                       <>
                         <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
                         <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-mono">
-                          {address.slice(0, 6)}...{address.slice(-4)}
+                          {wagmiAddress.slice(0, 6)}...{wagmiAddress.slice(-4)}
                         </span>
+                        {balanceData && (
+                          <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full ml-2">
+                            {parseFloat(balanceData.formatted).toFixed(4)} ETH
+                          </span>
+                        )}
                       </>
                     ) : (
                       <>
@@ -212,8 +223,14 @@ const UserDropdown = ({
 
             {/* Actions */}
             <div className="py-2">
+              {/* Wallet Connect Action (RainbowKit) */}
+              {!address && (
+                <div className="mb-2 flex justify-center">
+                  <ConnectButton />
+                </div>
+              )}
               {/* Link Wallet Action */}
-              {user && needsWalletForTransaction() && (
+              {user && needsWalletForTransaction() && false && (
                 <button
                   onClick={() => {
                     setIsLinkWalletModalOpen(true);
@@ -230,7 +247,6 @@ const UserDropdown = ({
                   </div>
                 </button>
               )}
-
               {/* Logout Action */}
               <button
                 onClick={() => {

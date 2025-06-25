@@ -230,16 +230,23 @@ export const calculatePortfolioGoalProgress = async (
 export const formatPrice = (price, currency = "usd") => {
   const symbol = currency === "eur" ? "€" : "$";
 
-  if (price >= 1000) {
-    return `${symbol}${price.toLocaleString("en-US", {
+  // Vérifier si price est valide
+  if (price === undefined || price === null || isNaN(price)) {
+    return `${symbol}0.00`;
+  }
+
+  const numPrice = Number(price);
+
+  if (numPrice >= 1000) {
+    return `${symbol}${numPrice.toLocaleString("en-US", {
       maximumFractionDigits: 0,
     })}`;
-  } else if (price >= 1) {
-    return `${symbol}${price.toLocaleString("en-US", {
+  } else if (numPrice >= 1) {
+    return `${symbol}${numPrice.toLocaleString("en-US", {
       maximumFractionDigits: 2,
     })}`;
   } else {
-    return `${symbol}${price.toLocaleString("en-US", {
+    return `${symbol}${numPrice.toLocaleString("en-US", {
       maximumFractionDigits: 4,
     })}`;
   }

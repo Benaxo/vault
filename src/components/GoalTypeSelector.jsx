@@ -202,16 +202,16 @@ const GoalTypeSelector = ({
   const getDefaultDescription = () => {
     if (goalType === "ETH_PRICE") {
       return `Sortir à ${formatPrice(
-        parseFloat(newGoal.targetValue),
+        parseFloat(newGoal.targetValue || 0),
         currency.toLowerCase()
       )}/ETH`;
     } else if (goalType === "PORTFOLIO_VALUE") {
       return `Portefeuille de ${formatPrice(
-        parseFloat(newGoal.targetValue),
+        parseFloat(newGoal.targetValue || 0),
         currency.toLowerCase()
       )}`;
     }
-    return `${newGoal.targetValue} ETH Goal`;
+    return `${newGoal.targetValue || 0} ETH Goal`;
   };
 
   const applySuggestion = (suggestion) => {
@@ -545,13 +545,16 @@ const GoalCard = ({ goal, isSelected, onSelect, ethPrice }) => {
     if (goal.goalType === "ETH_PRICE") {
       const currentPrice =
         goal.currency === "EUR" ? ethPrice.eur : ethPrice.usd;
-      return formatPrice(currentPrice, goal.currency.toLowerCase());
+      return formatPrice(
+        currentPrice || 0,
+        goal.currency?.toLowerCase() || "usd"
+      );
     } else if (goal.goalType === "PORTFOLIO_VALUE") {
       const ethBalance = parseFloat(goal.currentBalance || 0);
       const currentPrice =
         goal.currency === "EUR" ? ethPrice.eur : ethPrice.usd;
-      const currentValue = ethBalance * currentPrice;
-      return formatPrice(currentValue, goal.currency.toLowerCase());
+      const currentValue = ethBalance * (currentPrice || 0);
+      return formatPrice(currentValue, goal.currency?.toLowerCase() || "usd");
     } else {
       return `${goal.currentBalance || "0"} ETH`;
     }
@@ -560,16 +563,16 @@ const GoalCard = ({ goal, isSelected, onSelect, ethPrice }) => {
   const getTargetDisplay = () => {
     if (goal.goalType === "ETH_PRICE") {
       return `Cible: ${formatPrice(
-        goal.targetValue,
-        goal.currency.toLowerCase()
+        goal.targetValue || 0,
+        goal.currency?.toLowerCase() || "usd"
       )}/ETH`;
     } else if (goal.goalType === "PORTFOLIO_VALUE") {
       return `Cible: ${formatPrice(
-        goal.targetValue,
-        goal.currency.toLowerCase()
+        goal.targetValue || 0,
+        goal.currency?.toLowerCase() || "usd"
       )}`;
     } else {
-      return `Cible: ${goal.goalAmount} ETH`;
+      return `Cible: ${goal.goalAmount || 0} ETH`;
     }
   };
 
@@ -637,4 +640,3 @@ const GoalCard = ({ goal, isSelected, onSelect, ethPrice }) => {
 };
 
 export default GoalTypeSelector;
- 

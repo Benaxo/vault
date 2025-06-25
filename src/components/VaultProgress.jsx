@@ -22,19 +22,19 @@ const VaultProgress = () => {
     enabled: Boolean(address),
   });
 
-  // Get selected goal details from blockchain
-  const { data: goalBasics, isError: isGoalError } = useContractRead({
+  // Get selected goal details from blockchain using the new contract functions
+  const { data: goalDetails, isError: isGoalError } = useContractRead({
     address: CONTRACT_ADDRESS,
     abi: PiggyBankVaultABI,
-    functionName: "getGoalBasics",
+    functionName: "getGoalDetails",
     args: [selectedGoalId],
     enabled: Boolean(selectedGoalId),
   });
 
-  const { data: goalDescription } = useContractRead({
+  const { data: goalProgress } = useContractRead({
     address: CONTRACT_ADDRESS,
     abi: PiggyBankVaultABI,
-    functionName: "getGoalDescription",
+    functionName: "getGoalProgress",
     args: [selectedGoalId],
     enabled: Boolean(selectedGoalId),
   });
@@ -96,38 +96,62 @@ const VaultProgress = () => {
 
   // Calculate progress percentage
   const calculateProgress = () => {
-    if (!goalBasics || !goalBasics.goal || Number(goalBasics.goal) === 0)
-      return 0;
-    return (Number(goalBasics.balance) / Number(goalBasics.goal)) * 100;
+    if (!goalProgress) return 0;
+    return Number(goalProgress);
   };
 
   // Format unlock date
   const formatUnlockDate = () => {
-    if (
-      !goalBasics ||
-      !goalBasics.unlockTimestamp ||
-      Number(goalBasics.unlockTimestamp) === 0
-    )
-      return "Not set";
+    if (!goalDetails || !goalDetails[4] || Number(goalDetails[4]) === 0)
+      return "Non défini";
 
-    const date = new Date(Number(goalBasics.unlockTimestamp) * 1000);
+    const date = new Date(Number(goalDetails[4]) * 1000);
     return date.toLocaleDateString();
   };
 
   // Calculate time remaining
   const getTimeRemaining = () => {
-    if (!goalBasics || !goalBasics.unlockTimestamp) return null;
+    if (!goalDetails || !goalDetails[4]) return null;
 
-    const unlockTime = Number(goalBasics.unlockTimestamp);
+    const unlockTime = Number(goalDetails[4]);
     const now = Math.floor(Date.now() / 1000);
 
-    if (now >= unlockTime) return "Available to withdraw";
+    if (now >= unlockTime) return "Disponible pour retrait";
 
     const secondsRemaining = unlockTime - now;
     const days = Math.floor(secondsRemaining / 86400);
     const hours = Math.floor((secondsRemaining % 86400) / 3600);
+    const minutes = Math.floor((secondsRemaining % 3600) / 60);
 
-    return `${days} days, ${hours} hours remaining`;
+    if (days > 0) {
+      return `${days} jour(s), ${hours} heure(s) restantes`;
+    } else if (hours > 0) {
+      return `${hours} heure(s), ${minutes} minute(s) restantes`;
+    } else {
+      return `${minutes} minute(s) restantes`;
+    }
+  };
+
+  // Get goal type description
+  const getGoalTypeDescription = () => {
+    if (!goalDetails) return "";
+
+    const goalType = Number(goalDetails[1]);
+    const targetValue = goalDetails[2];
+    const currency = Number(goalDetails[3]);
+
+    switch (goalType) {
+      case 0: // ETH_AMOUNT
+        return `Objectif: ${formatEth(targetValue)} ETH`;
+      case 1: // ETH_PRICE
+        const price = (Number(targetValue) / 1e8).toFixed(2);
+        return `Prix cible: $${price} ${currency === 0 ? "USD" : "EUR"}`;
+      case 2: // PORTFOLIO_VALUE
+        const value = (Number(targetValue) / 1e8).toFixed(2);
+        return `Valeur cible: $${value} ${currency === 0 ? "USD" : "EUR"}`;
+      default:
+        return "Type d'objectif inconnu";
+    }
   };
 
   // Find matching Firebase goal for additional info
@@ -162,18 +186,19 @@ const VaultProgress = () => {
       <div className="bg-white shadow-xl rounded-lg p-8 max-w-4xl mx-auto">
         <div className="flex items-center justify-center">
           <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
-          Loading vault progress...
+          Chargement du progrès du vault...
         </div>
       </div>
     );
   }
 
-  if (isGoalError || (!goalBasics && selectedGoalId)) {
+  if (isGoalError || (!goalDetails && selectedGoalId)) {
     return (
       <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
-        <p className="font-bold">Error</p>
+        <p className="font-bold">Erreur</p>
         <p>
-          Unable to load goal data from the blockchain. Please try again later.
+          Impossible de charger les données de l'objectif depuis la blockchain.
+          Veuillez réessayer plus tard.
         </p>
       </div>
     );
@@ -182,142 +207,156 @@ const VaultProgress = () => {
   if (!address) {
     return (
       <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded">
-        <p className="font-bold">Wallet Required</p>
-        <p>Please connect your wallet to view vault progress.</p>
+        <p className="font-bold">Wallet Requis</p>
+        <p>Veuillez connecter votre wallet pour voir le progrès du vault.</p>
       </div>
     );
   }
 
-  if (!selectedGoalId || !goalBasics) {
+  if (!selectedGoalId || !goalDetails) {
     return (
       <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded">
-        <p className="font-bold">No Active Goals</p>
-        <p>Create a savings goal to start tracking your progress!</p>
+        <p className="font-bold">Aucun Objectif Actif</p>
+        <p>
+          Créez un objectif d'épargne pour commencer à suivre votre progrès !
+        </p>
       </div>
     );
   }
 
   const matchingGoal = getMatchingFirebaseGoal();
   const progress = calculateProgress();
+  const timeRemaining = getTimeRemaining();
 
   return (
     <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="bg-white shadow-xl rounded-lg p-8 max-w-2xl mx-auto"
+      className="bg-white shadow-xl rounded-lg p-8 max-w-4xl mx-auto"
     >
       <motion.h2
         variants={itemVariants}
         className="text-3xl font-bold text-gray-800 mb-6 flex items-center"
       >
-        <span className="mr-3">🐷</span> Your Savings Vault
+        <span className="mr-3">📊</span>
+        Progrès du Vault
       </motion.h2>
 
-      {!address ? (
-        <motion.p
-          variants={itemVariants}
-          className="text-gray-600 text-center py-8"
-        >
-          Please connect your wallet to view your vault.
-        </motion.p>
-      ) : (
-        <>
-          {/* Progress Section */}
-          <motion.div variants={itemVariants} className="mb-8">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-gray-700 font-medium">
-                Progress to Goal
-              </span>
-              <motion.span
-                className="text-xl font-bold"
-                initial={{ scale: 0.5 }}
-                animate={{ scale: 1 }}
-                key={progress}
-              >
-                {progress.toFixed(1)}%
-              </motion.span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-              <motion.div
-                className={`h-full rounded-full ${
-                  isGoalReached ? "bg-green-500" : "bg-blue-500"
-                }`}
-                initial={{ width: 0 }}
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: 1, ease: "easeOut" }}
-              />
-            </div>
-          </motion.div>
-
-          {/* Stats Grid */}
-          <motion.div
-            variants={itemVariants}
-            className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8"
+      {/* Goal Selection */}
+      {userGoals.length > 1 && (
+        <motion.div variants={itemVariants} className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Sélectionner un objectif
+          </label>
+          <select
+            value={selectedGoalId || ""}
+            onChange={(e) =>
+              setSelectedGoalId(e.target.value ? Number(e.target.value) : null)
+            }
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <p className="text-sm text-gray-600">Current Balance</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {formatEth(goalBasics?.balance)} ETH
-              </p>
-            </div>
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <p className="text-sm text-gray-600">Goal Amount</p>
-              <p className="text-2xl font-bold text-purple-600">
-                {formatEth(goalBasics?.goal)} ETH
-              </p>
-            </div>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <p className="text-sm text-gray-600">Unlock Date</p>
-              <p className="text-2xl font-bold text-green-600">
-                {formatUnlockDate()}
-              </p>
-            </div>
-            <div className="bg-yellow-50 p-4 rounded-lg">
-              <p className="text-sm text-gray-600">Time Remaining</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {getTimeRemaining() || "Not set"}
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Status Message */}
-          {isGoalReached && (
-            <motion.div
-              variants={itemVariants}
-              className="bg-green-100 border-l-4 border-green-500 text-green-700 p-6 rounded-lg mb-6"
-              initial={{ x: -100, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-            >
-              <div className="flex items-center">
-                <span className="text-2xl mr-3">🎉</span>
-                <div>
-                  <p className="font-bold text-lg">Congratulations!</p>
-                  <p>
-                    You've reached your savings goal! You can now withdraw your
-                    funds.
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Tips Section */}
-          <motion.div
-            variants={itemVariants}
-            className="bg-gray-50 p-6 rounded-lg"
-          >
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">
-              💡 Tips
-            </h3>
-            <ul className="space-y-2 text-gray-600">
-              <li>• Regular deposits help you reach your goal faster</li>
-              <li>• Early withdrawals are possible but come with a penalty</li>
-              <li>• You can update your goal amount at any time</li>
-            </ul>
-          </motion.div>
-        </>
+            {userGoals.map((goal) => (
+              <option key={goal.id} value={goal.blockchainGoalId}>
+                {goal.description || "Objectif d'épargne"} -{" "}
+                {goal.blockchainGoalId}
+              </option>
+            ))}
+          </select>
+        </motion.div>
       )}
+
+      {/* Progress Overview */}
+      <motion.div
+        variants={itemVariants}
+        className="grid md:grid-cols-2 gap-6 mb-8"
+      >
+        <div className="bg-gradient-to-br from-blue-500 to-purple-600 text-white p-6 rounded-xl">
+          <h3 className="text-lg font-semibold mb-4">Progrès Global</h3>
+          <div className="text-4xl font-bold mb-2">{progress.toFixed(1)}%</div>
+          <div className="w-full bg-white/20 rounded-full h-3 mb-2">
+            <div
+              className="bg-white rounded-full h-3 transition-all duration-500"
+              style={{ width: `${Math.min(progress, 100)}%` }}
+            ></div>
+          </div>
+          <p className="text-blue-100 text-sm">
+            {progress >= 100 ? "Objectif atteint ! 🎉" : "En cours..."}
+          </p>
+        </div>
+
+        <div className="bg-gradient-to-br from-green-500 to-teal-600 text-white p-6 rounded-xl">
+          <h3 className="text-lg font-semibold mb-4">Solde Actuel</h3>
+          <div className="text-4xl font-bold mb-2">
+            {formatEth(goalDetails[0])} ETH
+          </div>
+          <p className="text-green-100 text-sm">Montant total déposé</p>
+        </div>
+      </motion.div>
+
+      {/* Goal Details */}
+      <motion.div
+        variants={itemVariants}
+        className="bg-gray-50 rounded-lg p-6 mb-6"
+      >
+        <h3 className="text-xl font-semibold text-gray-800 mb-4">
+          Détails de l'Objectif
+        </h3>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <p className="text-gray-600 text-sm">Description</p>
+            <p className="font-medium">
+              {goalDetails[7] ||
+                matchingGoal?.description ||
+                "Aucune description"}
+            </p>
+          </div>
+          <div>
+            <p className="text-gray-600 text-sm">Type d'objectif</p>
+            <p className="font-medium">{getGoalTypeDescription()}</p>
+          </div>
+          {goalDetails[4] > 0 && (
+            <>
+              <div>
+                <p className="text-gray-600 text-sm">Date de déblocage</p>
+                <p className="font-medium">{formatUnlockDate()}</p>
+              </div>
+              <div>
+                <p className="text-gray-600 text-sm">Temps restant</p>
+                <p className="font-medium">{timeRemaining}</p>
+              </div>
+            </>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Status Indicators */}
+      <motion.div variants={itemVariants} className="grid md:grid-cols-3 gap-4">
+        <div
+          className={`p-4 rounded-lg text-center ${
+            isGoalReached
+              ? "bg-green-100 text-green-800"
+              : "bg-yellow-100 text-yellow-800"
+          }`}
+        >
+          <div className="text-2xl mb-2">{isGoalReached ? "✅" : "⏳"}</div>
+          <div className="font-semibold">
+            {isGoalReached ? "Objectif Atteint" : "En Cours"}
+          </div>
+        </div>
+
+        <div className="bg-blue-100 text-blue-800 p-4 rounded-lg text-center">
+          <div className="text-2xl mb-2">💰</div>
+          <div className="font-semibold">Actif</div>
+        </div>
+
+        <div className="bg-purple-100 text-purple-800 p-4 rounded-lg text-center">
+          <div className="text-2xl mb-2">🔒</div>
+          <div className="font-semibold">
+            {progress >= 100 ? "Débloqué" : "Verrouillé"}
+          </div>
+        </div>
+      </motion.div>
     </motion.div>
   );
 };

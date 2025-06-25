@@ -7,7 +7,12 @@ import {
   useWaitForTransaction,
 } from "wagmi";
 import PiggyBankVaultABI from "../abi/PiggyBankVault.json";
-import { CONTRACT_ADDRESS, ETH_ADDRESS } from "../constants";
+import {
+  CONTRACT_ADDRESS,
+  DEFAULT_TOKEN,
+  SUPPORTED_TOKENS,
+  TOKEN_METADATA,
+} from "../constants";
 import { useAuth } from "../hooks/useAuth";
 import { formatPrice } from "../services/priceService";
 import {
@@ -20,6 +25,7 @@ export const DepositForm = () => {
   const { address } = useAccount();
   const { user } = useAuth();
   const [amount, setAmount] = useState("");
+  const [selectedToken, setSelectedToken] = useState(DEFAULT_TOKEN);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -27,9 +33,29 @@ export const DepositForm = () => {
   const [userProfile, setUserProfile] = useState(null);
 
   // Get user's ETH balance
-  const { data: balance } = useBalance({
+  const { data: ethBalance } = useBalance({
     address: address,
   });
+
+  // Get user's BTC balance
+  const { data: btcBalance } = useBalance({
+    address: address,
+    token: SUPPORTED_TOKENS.BTC,
+  });
+
+  // Get current token balance
+  const getCurrentTokenBalance = () => {
+    switch (selectedToken) {
+      case SUPPORTED_TOKENS.BTC:
+        return btcBalance;
+      case SUPPORTED_TOKENS.ETH:
+      default:
+        return ethBalance;
+    }
+  };
+
+  const currentTokenBalance = getCurrentTokenBalance();
+  const currentTokenMetadata = TOKEN_METADATA[selectedToken];
 
   useEffect(() => {
     if (user) {
@@ -41,7 +67,12 @@ export const DepositForm = () => {
   }, [user, address]);
 
   const amountInWei = amount
-    ? BigInt(Math.floor(parseFloat(amount) * 1e18))
+    ? BigInt(
+        Math.floor(
+          parseFloat(amount) *
+            Math.pow(10, currentTokenMetadata?.decimals || 18)
+        )
+      )
     : 0n;
 
   const { data, write } = useContractWrite({
@@ -55,10 +86,10 @@ export const DepositForm = () => {
     onSuccess: async () => {
       try {
         // Calculer la valeur du dépôt avec des prix de fallback
-        const depositAmountEth = parseFloat(amount);
+        const depositAmount = parseFloat(amount);
         const fallbackPrices = { usd: 2300, eur: 2100 };
-        const depositValueUsd = depositAmountEth * fallbackPrices.usd;
-        const depositValueEur = depositAmountEth * fallbackPrices.eur;
+        const depositValueUsd = depositAmount * fallbackPrices.usd;
+        const depositValueEur = depositAmount * fallbackPrices.eur;
 
         // Enregistrer la transaction
         await recordDepositTransaction(user.uid, address, selectedGoal.id, {
@@ -68,16 +99,17 @@ export const DepositForm = () => {
           ethPriceAtTime: fallbackPrices,
           blockchainGoalId: selectedGoal.blockchainGoalId,
           transactionHash: data?.hash,
+          tokenSymbol: currentTokenMetadata?.symbol,
         });
 
         // Mettre à jour le solde du goal
         const newBalance = (
-          parseFloat(selectedGoal.currentBalance || 0) + depositAmountEth
+          parseFloat(selectedGoal.currentBalance || 0) + depositAmount
         ).toString();
         await updateGoalBalance(selectedGoal.id, newBalance);
 
         setSuccess(
-          `Dépôt de ${amount} ETH réussi ! ` +
+          `Dépôt de ${amount} ${currentTokenMetadata?.symbol} réussi ! ` +
             `Valeur approximative: ${formatPrice(
               depositValueUsd,
               "usd"
@@ -96,9 +128,9 @@ export const DepositForm = () => {
     const amountNum = parseFloat(amount);
     if (isNaN(amountNum) || amountNum <= 0) return false;
 
-    // Check if user has enough balance (leave 0.01 ETH for gas)
-    if (balance && balance.value) {
-      const maxAmount = parseFloat(balance.formatted) - 0.01;
+    // Check if user has enough balance (leave some for gas)
+    if (currentTokenBalance && currentTokenBalance.value) {
+      const maxAmount = parseFloat(currentTokenBalance.formatted) - 0.001;
       return amountNum <= maxAmount;
     }
 
@@ -112,6 +144,7 @@ export const DepositForm = () => {
     console.log("Debug - selectedGoal:", selectedGoal);
     console.log("Debug - write function available:", !!write);
     console.log("Debug - blockchainGoalId:", selectedGoal?.blockchainGoalId);
+    console.log("Debug - selectedToken:", selectedToken);
 
     if (!selectedGoal) {
       setError("Veuillez sélectionner ou créer un objectif d'abord");
@@ -119,11 +152,13 @@ export const DepositForm = () => {
     }
 
     if (!isValidAmount()) {
-      const balanceFormatted = balance ? parseFloat(balance.formatted) : 0;
+      const balanceFormatted = currentTokenBalance
+        ? parseFloat(currentTokenBalance.formatted)
+        : 0;
       setError(
-        `Montant invalide. Balance disponible: ${balanceFormatted.toFixed(
-          4
-        )} ETH (0.01 ETH réservé pour les frais)`
+        `Montant invalide. Balance disponible: ${balanceFormatted.toFixed(4)} ${
+          currentTokenMetadata?.symbol
+        } (0.001 réservé pour les frais)`
       );
       return;
     }
@@ -157,13 +192,13 @@ export const DepositForm = () => {
       setSuccess("");
 
       console.log("Debug - Attempting to call write with args:", {
-        tokenAddress: ETH_ADDRESS,
+        tokenAddress: selectedToken,
         goalId: selectedGoal.blockchainGoalId,
         value: amountInWei.toString(),
       });
 
       write({
-        args: [ETH_ADDRESS, selectedGoal.blockchainGoalId],
+        args: [selectedToken, selectedGoal.blockchainGoalId],
         value: amountInWei,
       });
     } catch (error) {
@@ -181,10 +216,11 @@ export const DepositForm = () => {
 
   // Get quick amount suggestions based on balance
   const getAmountSuggestions = () => {
-    if (!balance || !balance.value) return ["0.01", "0.1", "0.5"];
+    if (!currentTokenBalance || !currentTokenBalance.value)
+      return ["0.001", "0.01", "0.1"];
 
-    const balanceAmount = parseFloat(balance.formatted);
-    const maxAmount = balanceAmount - 0.01; // Reserve for gas
+    const balanceAmount = parseFloat(currentTokenBalance.formatted);
+    const maxAmount = balanceAmount - 0.001; // Reserve for gas
 
     if (maxAmount <= 0) return [];
 
@@ -226,17 +262,19 @@ export const DepositForm = () => {
 
     switch (goal.goalType) {
       case "ETH_PRICE":
-        return `Prix cible: ${formatPrice(
-          goal.targetPrice,
-          goal.currency?.toLowerCase() || "usd"
-        )}/ETH`;
+        const targetPrice = goal.targetPrice || 0;
+        const priceCurrency = goal.currency?.toLowerCase() || "usd";
+        return `Prix cible: ${formatPrice(targetPrice, priceCurrency)}/ETH`;
       case "PORTFOLIO_VALUE":
+        const portfolioValue = goal.portfolioValue || 0;
+        const portfolioCurrency = goal.currency?.toLowerCase() || "usd";
         return `Valeur cible: ${formatPrice(
-          goal.portfolioValue,
-          goal.currency?.toLowerCase() || "usd"
+          portfolioValue,
+          portfolioCurrency
         )}`;
       default:
-        return `Objectif: ${goal.goalAmount} ETH`;
+        const goalAmount = goal.goalAmount || 0;
+        return `Objectif: ${goalAmount} ETH`;
     }
   };
 
@@ -291,27 +329,118 @@ export const DepositForm = () => {
         Faire un Dépôt
       </motion.h2>
 
-      {/* Wallet Balance Display */}
-      {balance && (
+      {/* Token Selection */}
+      <motion.div variants={itemVariants} className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-3">
+          Token à déposer
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          {Object.entries(SUPPORTED_TOKENS).map(([key, tokenAddress]) => {
+            const metadata = TOKEN_METADATA[tokenAddress];
+            const balance = key === "BTC" ? btcBalance : ethBalance;
+            const isSelected = selectedToken === tokenAddress;
+
+            return (
+              <button
+                key={tokenAddress}
+                type="button"
+                onClick={() => setSelectedToken(tokenAddress)}
+                className={`p-3 rounded-lg border-2 transition-all ${
+                  isSelected
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+                disabled={isLoading || isConfirming}
+              >
+                <div className="text-center">
+                  <img
+                    src={metadata.logo}
+                    alt={metadata.symbol}
+                    className="w-8 h-8 mx-auto mb-1"
+                  />
+                  <div className="font-medium text-sm">{metadata.symbol}</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {balance
+                      ? `${parseFloat(balance.formatted).toFixed(4)}`
+                      : "0.0000"}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Note about wrapping ETH */}
+        {selectedToken === SUPPORTED_TOKENS.ETH && (
+          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start">
+              <span className="text-blue-600 mr-2">ℹ️</span>
+              <div className="text-sm text-blue-800">
+                <p className="font-medium">Info :</p>
+                <p>
+                  Vous déposez de l'ETH natif sur Sepolia. Les frais de gaz sont
+                  prélevés en ETH.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        {selectedToken === SUPPORTED_TOKENS.BTC && (
+          <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-start">
+              <span className="text-yellow-600 mr-2">⚠️</span>
+              <div className="text-sm text-yellow-800">
+                <p className="font-medium">Note :</p>
+                <p>
+                  Vous déposez du BTC tokenisé sur Sepolia. Vérifiez que vous
+                  avez le bon token BTC.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </motion.div>
+
+      {/* Current Token Balance Display */}
+      {currentTokenBalance && (
         <motion.div
           variants={itemVariants}
           className="mb-6 p-4 bg-green-50 border-l-4 border-green-400 rounded-lg"
         >
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-800 font-medium">Balance du wallet</p>
-              <p className="text-green-700 text-lg font-semibold">
-                {parseFloat(balance.formatted).toFixed(4)} ETH
-              </p>
+            <div className="flex items-center">
+              <span className="text-2xl mr-3">
+                {currentTokenMetadata?.symbol === "ETH" ? (
+                  <img
+                    src="/Ethereum_logo.png"
+                    alt="Ethereum Logo"
+                    className="h-7 w-7 inline-block align-middle mr-2"
+                  />
+                ) : (
+                  currentTokenMetadata?.logo
+                )}
+              </span>
+              <div>
+                <p className="text-green-800 font-medium">
+                  Balance {currentTokenMetadata?.symbol}
+                </p>
+                <p className="text-green-700 text-lg font-semibold">
+                  {parseFloat(currentTokenBalance.formatted).toFixed(4)}{" "}
+                  {currentTokenMetadata?.symbol}
+                </p>
+              </div>
             </div>
             <div className="text-right">
               <p className="text-green-600 text-sm">Disponible pour dépôt</p>
               <p className="text-green-700 font-medium">
-                {Math.max(0, parseFloat(balance.formatted) - 0.01).toFixed(4)}{" "}
-                ETH
+                {Math.max(
+                  0,
+                  parseFloat(currentTokenBalance.formatted) - 0.001
+                ).toFixed(4)}{" "}
+                {currentTokenMetadata?.symbol}
               </p>
               <p className="text-xs text-green-600">
-                (0.01 ETH réservé pour les frais)
+                (0.001 réservé pour les frais)
               </p>
             </div>
           </div>
@@ -360,7 +489,7 @@ export const DepositForm = () => {
               htmlFor="amount"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Montant à déposer (ETH)
+              Montant à déposer ({currentTokenMetadata?.symbol})
             </label>
 
             {/* Quick Amount Suggestions */}
@@ -375,31 +504,36 @@ export const DepositForm = () => {
                     className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm transition-colors"
                     disabled={isLoading || isConfirming}
                   >
-                    {suggestion} ETH
+                    {suggestion} {currentTokenMetadata?.symbol}
                   </button>
                 ))}
               </div>
             )}
 
             <div className="relative">
-            <input
-              type="number"
-              id="amount"
+              <input
+                type="number"
+                id="amount"
                 step="0.001"
                 min="0.001"
                 max={
-                  balance
-                    ? Math.max(0, parseFloat(balance.formatted) - 0.01)
+                  currentTokenBalance
+                    ? Math.max(
+                        0,
+                        parseFloat(currentTokenBalance.formatted) - 0.001
+                      )
                     : 100
                 }
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="0.1"
                 disabled={isLoading || isConfirming}
               />
               <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                <span className="text-gray-500 font-medium">ETH</span>
+                <span className="text-gray-500 font-medium">
+                  {currentTokenMetadata?.symbol}
+                </span>
               </div>
             </div>
 
@@ -484,7 +618,7 @@ export const DepositForm = () => {
               ? "Confirmation en cours..."
               : isLoading
               ? "Traitement..."
-              : "Déposer ETH"}
+              : `Déposer ${currentTokenMetadata?.symbol}`}
           </motion.button>
         </motion.form>
       )}

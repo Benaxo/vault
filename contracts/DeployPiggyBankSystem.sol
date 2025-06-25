@@ -9,6 +9,7 @@ import {console} from "forge-std/console.sol";
 interface IPiggyBankVault {
     function setGovernanceToken(address _governanceToken) external;
     function owner() external view returns (address);
+    function transferOwnership(address newOwner) external;
 }
 
 interface IPiggyGovernanceToken {
@@ -17,6 +18,11 @@ interface IPiggyGovernanceToken {
 }
 
 contract DeployPiggyBankSystem is Script {
+    
+    error InvalidPrivateKey();
+    error DeploymentFailed(string contractName);
+    error ContractNotDeployed(string contractName);
+    error InvalidOwner(string contractName);
     
     // Addresses des contrats déployés
     address public piggyBankVault;
@@ -31,8 +37,8 @@ contract DeployPiggyBankSystem is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        console.log("=== Déploiement du système PiggyBank ===");
-        console.log("Deployer:", vm.addr(deployerPrivateKey));
+        console.log(unicode"=== Déploiement du système PiggyBank ===");
+        console.log(unicode"Deployer:", vm.addr(deployerPrivateKey));
         
         // Étape 1: Configuration des tokens et price feeds
         setupTokensAndFeeds();
@@ -51,9 +57,9 @@ contract DeployPiggyBankSystem is Script {
         
         vm.stopBroadcast();
         
-        console.log("=== Déploiement terminé ===");
-        console.log("PiggyBankVault:", piggyBankVault);
-        console.log("PiggyGovernanceToken:", piggyGovernanceToken);
+        console.log(unicode"=== Déploiement terminé ===");
+        console.log(unicode"PiggyBankVault:", piggyBankVault);
+        console.log(unicode"PiggyGovernanceToken:", piggyGovernanceToken);
     }
     
     function setupTokensAndFeeds() internal {
@@ -84,31 +90,37 @@ contract DeployPiggyBankSystem is Script {
         tokens.push(ethToken);
         priceFeeds.push(eurUsdFeed);
         
-        console.log("Tokens configurés:", tokens.length);
+        //console.log("Tokens configurés:", tokens.length);
     }
     
     function deployPiggyBankVault() internal {
-        console.log("Déploiement de PiggyBankVault...");
+        console.log(unicode"Déploiement de PiggyBankVault...");
         
         address ethUsdFeed = 0x694AA1769357215DE4FAC081bf1f309aDC325306;
         address eurUsdFeed = 0xb49f677943BC038e9857d61E7d053CaA2C1734C1;
         
-        // Déployer le contrat avec address(0) pour le token de gouvernance
+        // Obtenir l'adresse du deployer
+        address deployer = msg.sender;
+        
+        // Déployer le contrat avec l'adresse du deployer comme propriétaire
         bytes memory bytecode = abi.encodePacked(
             vm.getCode("PiggyBankVault.sol"),
-            abi.encode(tokens, priceFeeds, ethUsdFeed, eurUsdFeed, address(0))
+            abi.encode(tokens, priceFeeds, ethUsdFeed, eurUsdFeed, address(0), deployer)
         );
         
+        bytes32 salt = keccak256("PiggyBank_v1.0.0");
+        address deployedVault;
         assembly {
-            piggyBankVault := create2(0, add(bytecode, 0x20), mload(bytecode), salt())
+            deployedVault := create2(0, add(bytecode, 0x20), mload(bytecode), salt)
         }
+        piggyBankVault = deployedVault;
         
-        require(piggyBankVault != address(0), "Échec du déploiement PiggyBankVault");
-        console.log("PiggyBankVault déployé à:", piggyBankVault);
+        if (piggyBankVault == address(0)) revert DeploymentFailed("PiggyBankVault");
+        console.log(unicode"PiggyBankVault déployé à:", piggyBankVault);
     }
     
     function deployPiggyGovernanceToken() internal {
-        console.log("Déploiement de PiggyGovernanceToken...");
+        //console.log("Déploiement de PiggyGovernanceToken...");
         
         // Paramètres du token
         string memory name = "PiggyGovernanceToken";
@@ -121,20 +133,23 @@ contract DeployPiggyBankSystem is Script {
             abi.encode(name, symbol, initialSupply, piggyBankVault)
         );
         
+        bytes32 salt = keccak256("PiggyGovernanceToken_v1.0.0");
+        address deployedToken;
         assembly {
-            piggyGovernanceToken := create2(0, add(bytecode, 0x20), mload(bytecode), salt())
+            deployedToken := create2(0, add(bytecode, 0x20), mload(bytecode), salt)
         }
+        piggyGovernanceToken = deployedToken;
         
-        require(piggyGovernanceToken != address(0), "Échec du déploiement PiggyGovernanceToken");
-        console.log("PiggyGovernanceToken déployé à:", piggyGovernanceToken);
+        if (piggyGovernanceToken == address(0)) revert DeploymentFailed("PiggyGovernanceToken");
+        console.log(unicode"PiggyGovernanceToken déployé à:", piggyGovernanceToken);
     }
     
     function configureContracts() internal {
-        console.log("Configuration des références croisées...");
+        //console.log("Configuration des références croisées...");
         
         // Configurer l'adresse du token de gouvernance dans le vault
         IPiggyBankVault(piggyBankVault).setGovernanceToken(piggyGovernanceToken);
-        console.log("Token de gouvernance configuré dans le vault");
+        //console.log("Token de gouvernance configuré dans le vault");
         
         // Optionnel: Si le token a besoin de mettre à jour l'adresse du vault
         // (au cas où elle serait différente de celle passée au constructeur)
@@ -142,27 +157,23 @@ contract DeployPiggyBankSystem is Script {
     }
     
     function verifyDeployment() internal view {
-        console.log("Vérification du déploiement...");
+        //console.log("Vérification du déploiement...");
         
         // Vérifier que les contrats sont déployés
-        require(piggyBankVault.code.length > 0, "PiggyBankVault non déployé");
-        require(piggyGovernanceToken.code.length > 0, "PiggyGovernanceToken non déployé");
+        if (piggyBankVault.code.length == 0) revert ContractNotDeployed("PiggyBankVault");
+        if (piggyGovernanceToken.code.length == 0) revert ContractNotDeployed("PiggyGovernanceToken");
         
         // Vérifier les propriétaires
         address vaultOwner = IPiggyBankVault(piggyBankVault).owner();
         address tokenOwner = IPiggyGovernanceToken(piggyGovernanceToken).owner();
         
-        console.log("Propriétaire du vault:", vaultOwner);
-        console.log("Propriétaire du token:", tokenOwner);
+        // console.log("Propriétaire du vault:", vaultOwner);
+        // console.log("Propriétaire du token:", tokenOwner);
         
-        require(vaultOwner == msg.sender, "Propriétaire du vault incorrect");
-        require(tokenOwner == msg.sender, "Propriétaire du token incorrect");
+        if (vaultOwner != msg.sender) revert InvalidOwner("PiggyBankVault");
+        if (tokenOwner != msg.sender) revert InvalidOwner("PiggyGovernanceToken");
         
-        console.log("Vérifications réussies!");
-    }
-    
-    function salt() internal pure returns (bytes32) {
-        return keccak256("PiggyBank_v1.0.0");
+        console.log(unicode"Vérifications réussies!");
     }
 }
 
@@ -174,7 +185,7 @@ contract DeployPiggyBankSystemSimple is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        console.log("=== Déploiement simplifié du système PiggyBank ===");
+        console.log(unicode"=== Déploiement simplifié du système PiggyBank ===");
         
         // Configuration des tokens et price feeds
         address[] memory tokens = new address[](4);
@@ -197,15 +208,15 @@ contract DeployPiggyBankSystemSimple is Script {
         address eurUsdFeed = 0xb49f677943BC038e9857d61E7d053CaA2C1734C1;
         
         // Déploiement du vault (sans token de gouvernance)
-        console.log("Déploiement du PiggyBankVault...");
+        console.log(unicode"Déploiement du PiggyBankVault...");
         // Note: Utiliser new PiggyBankVault() quand les imports seront résolus
         
         // Déploiement du token de gouvernance
-        console.log("Déploiement du PiggyGovernanceToken...");
+        //console.log("Déploiement du PiggyGovernanceToken...");
         // Note: Utiliser new PiggyGovernanceToken() quand les imports seront résolus
         
         // Configuration des références croisées
-        console.log("Configuration terminée");
+        //console.log("Configuration terminée");
         
         vm.stopBroadcast();
     }

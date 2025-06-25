@@ -1,3 +1,4 @@
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import React, { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import logo from "../public/logo.jpeg";
@@ -324,14 +325,21 @@ function App() {
                         ? "Créez un compte pour sauvegarder votre progression"
                         : "Configuration incomplète"}
                     </span>
-                    <button
-                      onClick={() => {
-                        setIsAuthModalOpen(true);
-                      }}
-                      className="text-cyan-400 hover:text-purple-400 font-medium underline"
-                    >
-                      {user ? "Lier le Wallet" : "Créer un compte"}
-                    </button>
+                    {user ? (
+                      <ConnectButton
+                        label="Lier le Wallet"
+                        showBalance={false}
+                      />
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setIsAuthModalOpen(true);
+                        }}
+                        className="text-cyan-400 hover:text-purple-400 font-medium underline"
+                      >
+                        Créer un compte
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

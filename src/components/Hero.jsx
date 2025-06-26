@@ -1,7 +1,55 @@
-import { motion } from "framer-motion";
-import React from "react";
+import React, { useEffect, useState } from "react";
+
+// ParallaxDivider composant local
+const ParallaxDivider = () => (
+  <div
+    className="relative w-full overflow-hidden leading-none"
+    style={{ height: "60px" }}
+  >
+    <svg
+      className="absolute top-0 left-0 w-full h-full"
+      viewBox="0 0 1440 60"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="none"
+    >
+      <path
+        d="M0 0C360 60 1080 0 1440 60V60H0V0Z"
+        fill="url(#parallax-gradient)"
+      />
+      <defs>
+        <linearGradient
+          id="parallax-gradient"
+          x1="0"
+          y1="0"
+          x2="1440"
+          y2="60"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop stopColor="#06b6d4" />
+          <stop offset="1" stopColor="#a21caf" />
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+);
 
 const Hero = ({ setShowHero }) => {
+  const [expanded, setExpanded] = useState(false);
+  const [parallaxOffset, setParallaxOffset] = useState(0);
+
+  // Parallax scroll effect for the hero image
+  useEffect(() => {
+    const handleScroll = () => {
+      // Limite l'effet à la première section (par exemple, 0 à 500px de scroll)
+      const scrollY = window.scrollY;
+      const max = 100;
+      setParallaxOffset(Math.min(scrollY * 0.4, max));
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const stats = [
     { value: "100+", label: "Active Savers" },
     { value: "500+", label: "ETH Saved" },
@@ -27,154 +75,293 @@ const Hero = ({ setShowHero }) => {
   ];
 
   return (
-    <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 text-white rounded-xl shadow-2xl overflow-hidden">
-      <div className="container mx-auto px-6 py-16 md:py-24">
-        {/* Main Content */}
-        <div className="md:flex md:items-center md:space-x-12">
-          {/* Left Column - Text Content */}
-          <div className="md:w-1/2 mb-12 md:mb-0">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
-              <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6">
-                Your Digital
-                <span className="block text-yellow-300">Piggy Bank</span>
+    <div className="">
+      {/* Section principale */}
+      <section className="py-12 bg-black sm:pb-16 lg:pb-20 xl:pb-24">
+        <div className="px-4 mx-auto sm:px-6 lg:px-8 max-w-7xl">
+          <div className="relative">
+            <div className="lg:w-2/3">
+              <h1 className="mt-6 text-4xl font-normal text-white sm:mt-10 sm:text-5xl lg:text-6xl xl:text-8xl">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-purple-500">
+                  Investissez simplement
+                </span>{" "}
               </h1>
-              <p className="text-xl md:text-2xl mb-8 opacity-90 leading-relaxed">
-                Transform your savings habits with blockchain technology. Set
-                goals, lock funds, and watch your wealth grow.
+              <p className="max-w-lg mt-4 text-xl font-normal text-gray-400 sm:mt-8">
+                Surfer sur le marché crypto de manière simple et sécurisée avec
+                notre application.
               </p>
-
-              {/* Storytelling Section */}
-              <div className="bg-white bg-opacity-10 rounded-lg p-6 mb-8 backdrop-blur-sm">
-                <h3 className="text-xl font-semibold mb-3">Imagine this...</h3>
-                <p className="opacity-90">
-                  You want to save for that dream vacation, but temptation
-                  always wins. With PiggyBank Vault, your savings are locked
-                  until you reach your goal. No more impulse spending, just
-                  steady progress towards your dreams.
-                </p>
-              </div>
-
-              {/* CTA Buttons */}
-              <div className="flex flex-wrap gap-4">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="bg-yellow-400 text-blue-900 font-bold py-4 px-8 rounded-full hover:bg-yellow-300 transition-colors shadow-lg"
+              <div className="relative inline-flex items-center justify-center mt-8 sm:mt-12 group">
+                <div className="absolute transition-all duration-200 rounded-full -inset-px bg-gradient-to-r from-cyan-500 to-purple-500 group-hover:shadow-lg group-hover:shadow-cyan-500/50"></div>
+                <a
+                  href="#"
+                  title=""
+                  className="relative inline-flex items-center justify-center px-8 py-3 text-base font-normal text-white bg-black border border-transparent rounded-full"
+                  role="button"
                   onClick={() => setShowHero(false)}
                 >
-                  Start Your Journey
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="bg-transparent border-2 border-white font-bold py-4 px-8 rounded-full hover:bg-white hover:bg-opacity-10 transition-all"
-                >
-                  Learn More
-                </motion.button>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Right Column - Visual Elements */}
-          <div className="md:w-1/2">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8 }}
-              className="relative"
-            >
-              {/* Animated Piggy Bank */}
-              <div className="relative w-96 h-96 mx-auto">
-                <motion.div
-                  animate={{
-                    y: [0, -10, 0],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                  className="absolute inset-0 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full shadow-2xl flex items-center justify-center"
-                >
-                  <span className="text-8xl">🐷</span>
-                </motion.div>
-
-                {/* Floating Coins */}
-                <motion.div
-                  animate={{
-                    y: [0, -20, 0],
-                    rotate: [0, 360],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                  className="absolute top-0 right-0 text-4xl"
-                >
-                  💰
-                </motion.div>
-                <motion.div
-                  animate={{
-                    y: [0, -15, 0],
-                    rotate: [0, -360],
-                  }}
-                  transition={{
-                    duration: 2.5,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                  className="absolute bottom-0 left-0 text-4xl"
-                >
-                  💎
-                </motion.div>
+                  Commencer l'expérience
+                </a>
               </div>
 
-              {/* Stats Section */}
-              <div className="grid grid-cols-3 gap-4 mt-8">
-                {stats.map((stat, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.2 }}
-                    className="bg-white bg-opacity-10 rounded-lg p-4 text-center backdrop-blur-sm"
+              <div>
+                <div className="inline-flex items-center pt-6 mt-8 border-t border-gray-800 sm:pt-10 sm:mt-14">
+                  <svg
+                    className="w-6 h-6"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    strokeWidth="1.5"
+                    xmlns="http://www.w3.org/2000/svg"
                   >
-                    <div className="text-2xl font-bold text-yellow-300">
-                      {stat.value}
-                    </div>
-                    <div className="text-sm opacity-80">{stat.label}</div>
-                  </motion.div>
-                ))}
+                    <path
+                      d="M13 7.00003H21M21 7.00003V15M21 7.00003L13 15L9 11L3 17"
+                      stroke="url(#a)"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <defs>
+                      <linearGradient
+                        id="a"
+                        x1="3"
+                        y1="7.00003"
+                        x2="22.2956"
+                        y2="12.0274"
+                        gradientUnits="userSpaceOnUse"
+                      >
+                        <stop
+                          offset="0%"
+                          style={{ stopColor: "var(--color-cyan-500)" }}
+                        />
+                        <stop
+                          offset="100%"
+                          style={{ stopColor: "var(--color-purple-500)" }}
+                        />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                </div>
               </div>
-            </motion.div>
+            </div>
+
+            <div className="mt-8 md:absolute md:mt-0 md:top-32 lg:top-0 md:right-0">
+              <img
+                className="w-full max-w-xs mx-auto lg:max-w-lg xl:max-w-xl"
+                src="https://landingfoliocom.imgix.net/store/collection/dusk/images/hero/1/3d-illustration.png"
+                alt=""
+                style={{
+                  transform: `translateY(${parallaxOffset}px)`,
+                  transition: "transform 0.1s linear",
+                  willChange: "transform",
+                }}
+              />
+            </div>
           </div>
         </div>
+      </section>
 
-        {/* Features Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="grid md:grid-cols-3 gap-6 mt-16"
-        >
-          {features.map((feature, index) => (
-            <motion.div
-              key={index}
-              whileHover={{ scale: 1.05 }}
-              className="bg-white bg-opacity-10 rounded-lg p-6 backdrop-blur-sm"
-            >
-              <div className="text-4xl mb-4">{feature.icon}</div>
-              <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-              <p className="opacity-80">{feature.description}</p>
-            </motion.div>
-          ))}
-        </motion.div>
-      </div>
+      {/* Parallax Divider */}
+      <ParallaxDivider />
+
+      {/* Section Avis */}
+      <section className="bg-black py-12">
+        <div className="max-w-4xl mx-auto px-4">
+          <h2 className="text-3xl font-bold text-white text-center mb-8">
+            Ils nous font confiance
+          </h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Avis 1 */}
+            <div className="bg-gray-900 rounded-xl p-6 flex flex-col items-center shadow-lg">
+              <img
+                src="https://randomuser.me/api/portraits/men/32.jpg"
+                alt="avatar"
+                className="w-16 h-16 rounded-full mb-4"
+              />
+              <h3 className="text-lg font-semibold text-white mb-2">
+                Lucas M.
+              </h3>
+              <p className="text-gray-300 text-center mb-3">
+                "Interface intuitive, j'ai pu économiser sans stress. Je
+                recommande !"
+              </p>
+              <div className="flex space-x-1">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className="text-yellow-400">
+                    ★
+                  </span>
+                ))}
+              </div>
+            </div>
+            {/* Avis 2 */}
+            <div className="bg-gray-900 rounded-xl p-6 flex flex-col items-center shadow-lg">
+              <img
+                src="https://randomuser.me/api/portraits/women/44.jpg"
+                alt="avatar"
+                className="w-16 h-16 rounded-full mb-4"
+              />
+              <h3 className="text-lg font-semibold text-white mb-2">
+                Sophie L.
+              </h3>
+              <p className="text-gray-300 text-center mb-3">
+                "La sécurité avant tout, et des objectifs clairs. Parfait pour
+                débuter dans la crypto !"
+              </p>
+              <div className="flex space-x-1">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className="text-yellow-400">
+                    ★
+                  </span>
+                ))}
+              </div>
+            </div>
+            {/* Avis 3 */}
+            <div className="bg-gray-900 rounded-xl p-6 flex flex-col items-center shadow-lg">
+              <img
+                src="https://randomuser.me/api/portraits/men/65.jpg"
+                alt="avatar"
+                className="w-16 h-16 rounded-full mb-4"
+              />
+              <h3 className="text-lg font-semibold text-white mb-2">
+                Yanis D.
+              </h3>
+              <p className="text-gray-300 text-center mb-3">
+                "J'adore suivre ma progression, l'app est motivante et simple
+                d'utilisation."
+              </p>
+              <div className="flex space-x-1">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className="text-yellow-400">
+                    ★
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Parallax Divider */}
+      <ParallaxDivider />
+
+      {/* Section Communauté */}
+      <section className="bg-black py-16">
+        <div className="max-w-5xl mx-auto px-4">
+          <h2 className="text-5xl font-bold text-white text-center mb-4">
+            Communauté
+          </h2>
+          <p className="text-xl text-gray-300 text-center mb-12">
+            S'impliquez dans notre communauté. Tout le monde est le bienvenu !
+          </p>
+          <div className="flex flex-col md:flex-row gap-8 justify-center items-center">
+            {/* X */}
+            <div className="bg-gray-900 rounded-2xl p-8 flex-1 min-w-[260px] max-w-sm flex flex-col items-start shadow-lg">
+              <div className="flex items-center mb-3">
+                <img
+                  src="/X_logo_2023_(white).png"
+                  alt="X logo"
+                  className="h-8 w-8 mr-2"
+                />
+                <a
+                  href="#"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-1 text-gray-400 hover:text-white"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 inline"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M18 8l4 4m0 0l-4 4m4-4H2"
+                    />
+                  </svg>
+                </a>
+              </div>
+              <p className="text-gray-300">
+                Pour les annonces, les astuces et les informations générales.
+              </p>
+            </div>
+            {/* Discord */}
+            <div className="bg-gray-900 rounded-2xl p-8 flex-1 min-w-[260px] max-w-sm flex flex-col items-start shadow-lg">
+              <div className="flex items-center mb-3">
+                <img
+                  src="/Discord_Logo_sans_texte.svg.png"
+                  alt="Discord logo"
+                  className="h-8 w-8 mr-2"
+                />
+                <a
+                  href="#"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-1 text-gray-400 hover:text-white"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 inline"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M18 8l4 4m0 0l-4 4m4-4H2"
+                    />
+                  </svg>
+                </a>
+              </div>
+              <p className="text-gray-300">
+                Pour s’impliquer dans la communauté, poser des questions et
+                partager des astuces.
+              </p>
+            </div>
+            {/* Github */}
+            <div className="bg-gray-900 rounded-2xl p-8 flex-1 min-w-[260px] max-w-sm flex flex-col items-start shadow-lg">
+              <div className="flex items-center mb-3">
+                <svg className="h-7 w-7 mr-2" fill="white" viewBox="0 0 24 24">
+                  <path d="M12 2C6.477 2 2 6.484 2 12.021c0 4.428 2.865 8.184 6.839 9.504.5.092.682-.217.682-.482 0-.237-.009-.868-.014-1.703-2.782.605-3.369-1.342-3.369-1.342-.454-1.157-1.11-1.465-1.11-1.465-.908-.62.069-.608.069-.608 1.004.07 1.532 1.032 1.532 1.032.892 1.53 2.341 1.088 2.91.832.091-.647.35-1.088.636-1.339-2.221-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.295 2.748-1.025 2.748-1.025.546 1.378.202 2.397.1 2.65.64.7 1.028 1.595 1.028 2.688 0 3.847-2.337 4.695-4.566 4.944.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.744 0 .267.18.578.688.48C19.138 20.2 22 16.447 22 12.021 22 6.484 17.523 2 12 2z" />
+                </svg>
+                <span className="font-semibold text-white text-lg mr-2">
+                  Github
+                </span>
+                <a
+                  href="#"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-1 text-gray-400 hover:text-white"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 inline"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M18 8l4 4m0 0l-4 4m4-4H2"
+                    />
+                  </svg>
+                </a>
+              </div>
+              <p className="text-gray-300">
+                Pour signaler des bugs, demander des fonctionnalités et
+                contribuer au projet.
+              </p>
+            </div>
+          </div>
+          <div className="text-center text-gray-500 mt-12 text-sm">
+            © 2025 PiggyBank Vault. All rights reserved.
+          </div>
+        </div>
+      </section>
     </div>
   );
 };

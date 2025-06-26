@@ -5,7 +5,6 @@ import logo from "../public/logo.jpeg";
 import AuthModal from "./components/AuthModal";
 import { DepositForm } from "./components/DepositForm";
 import Hero from "./components/Hero";
-import HeroC from "./components/HeroC";
 import PortfolioOverview from "./components/PortfolioOverview";
 import UserDropdown from "./components/UserDropdown";
 import WalletConnect from "./components/WalletConnect";
@@ -351,7 +350,7 @@ function App() {
           {/* HERO PAGE PAR DEFAUT */}
           {showHero ? (
             <div className="mb-12">
-              <HeroC setShowHero={setShowHero} />
+              <Hero setShowHero={setShowHero} />
             </div>
           ) : (
             // APP PRINCIPALE

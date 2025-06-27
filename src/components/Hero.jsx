@@ -420,7 +420,7 @@ const Hero = ({ setShowHero }) => {
             </div>
           </div>
           <div className="text-center text-gray-500 mt-12 text-sm">
-            © 2025 PiggyBank Vault. All rights reserved.
+            © 2025 Moneta. All rights reserved.
           </div>
         </div>
       </section>

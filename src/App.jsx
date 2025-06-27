@@ -273,7 +273,7 @@ function App() {
                 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent cursor-pointer"
                 onClick={() => setShowHero(true)}
               >
-                PiggyBank Vault
+                Moneta
               </span>
             </div>
 

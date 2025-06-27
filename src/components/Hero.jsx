@@ -83,10 +83,10 @@ const Hero = ({ setShowHero }) => {
             <div className="lg:w-2/3">
               <h1 className="mt-6 text-4xl font-normal text-white sm:mt-10 sm:text-5xl lg:text-6xl xl:text-8xl">
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-purple-500">
-                  Investissez simplement
+                  Épargnez Progressez Gagnez
                 </span>{" "}
               </h1>
-              <p className="max-w-lg mt-4 text-xl font-normal text-gray-400 sm:mt-8">
+              <p className="max-w-lg mt-4 text-xl font-normal text-gray-200 sm:mt-8">
                 Surfer sur le marché crypto de manière simple et sécurisée avec
                 notre application.
               </p>

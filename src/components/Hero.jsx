@@ -37,6 +37,7 @@ const ParallaxDivider = () => (
 const Hero = ({ setShowHero }) => {
   const [expanded, setExpanded] = useState(false);
   const [parallaxOffset, setParallaxOffset] = useState(0);
+  const [testimonialsOffset, setTestimonialsOffset] = useState(0);
 
   // Parallax scroll effect for the hero image
   useEffect(() => {
@@ -45,6 +46,25 @@ const Hero = ({ setShowHero }) => {
       const scrollY = window.scrollY;
       const max = 100;
       setParallaxOffset(Math.min(scrollY * 0.4, max));
+
+      // Effet de défilement horizontal pour les avis
+      const testimonialsSection = document.getElementById(
+        "testimonials-section"
+      );
+      if (testimonialsSection) {
+        const rect = testimonialsSection.getBoundingClientRect();
+        const windowHeight = window.innerHeight;
+
+        // Commence l'animation quand la section entre dans le viewport
+        if (rect.top < windowHeight && rect.bottom > 0) {
+          const progress =
+            (windowHeight - rect.top) / (windowHeight + rect.height);
+          const maxOffset = 800; // Distance maximale de défilement
+          setTestimonialsOffset(
+            Math.max(0, Math.min(progress * maxOffset, maxOffset))
+          );
+        }
+      }
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -71,6 +91,80 @@ const Hero = ({ setShowHero }) => {
       icon: "📈",
       title: "Track Progress",
       description: "Visualize your journey to financial freedom",
+    },
+  ];
+
+  // Données des avis étendues
+  const testimonials = [
+    {
+      id: 1,
+      name: "Lucas M.",
+      avatar: "https://randomuser.me/api/portraits/men/32.jpg",
+      text: "Interface intuitive, j'ai pu économiser sans stress. Je recommande !",
+      rating: 5,
+    },
+    {
+      id: 2,
+      name: "Sophie L.",
+      avatar: "https://randomuser.me/api/portraits/women/44.jpg",
+      text: "La sécurité avant tout, et des objectifs clairs. Parfait pour débuter dans la crypto !",
+      rating: 5,
+    },
+    {
+      id: 3,
+      name: "Yanis D.",
+      avatar: "https://randomuser.me/api/portraits/men/65.jpg",
+      text: "J'adore suivre ma progression, l'app est motivante et simple d'utilisation.",
+      rating: 5,
+    },
+    {
+      id: 4,
+      name: "Emma R.",
+      avatar: "https://randomuser.me/api/portraits/women/28.jpg",
+      text: "Enfin une app qui m'aide à rester disciplinée avec mes économies crypto !",
+      rating: 5,
+    },
+    {
+      id: 5,
+      name: "Thomas B.",
+      avatar: "https://randomuser.me/api/portraits/men/45.jpg",
+      text: "Les indicateurs de marché sont géniaux pour prendre les bonnes décisions.",
+      rating: 5,
+    },
+    {
+      id: 6,
+      name: "Marie K.",
+      avatar: "https://randomuser.me/api/portraits/women/67.jpg",
+      text: "Simple, sécurisé et efficace. Exactement ce que je cherchais !",
+      rating: 5,
+    },
+    {
+      id: 7,
+      name: "Alexandre P.",
+      avatar: "https://randomuser.me/api/portraits/men/23.jpg",
+      text: "L'interface est magnifique et les fonctionnalités sont parfaites.",
+      rating: 5,
+    },
+    {
+      id: 8,
+      name: "Julie M.",
+      avatar: "https://randomuser.me/api/portraits/women/89.jpg",
+      text: "J'ai atteint mon premier objectif en 3 mois grâce à cette app !",
+      rating: 5,
+    },
+    {
+      id: 9,
+      name: "David L.",
+      avatar: "https://randomuser.me/api/portraits/men/12.jpg",
+      text: "La transparence de la blockchain avec une UX moderne, parfait !",
+      rating: 5,
+    },
+    {
+      id: 10,
+      name: "Camille S.",
+      avatar: "https://randomuser.me/api/portraits/women/34.jpg",
+      text: "Je recommande à tous mes amis qui veulent se lancer dans la crypto.",
+      rating: 5,
     },
   ];
 
@@ -162,78 +256,46 @@ const Hero = ({ setShowHero }) => {
       <ParallaxDivider />
 
       {/* Section Avis */}
-      <section className="bg-black py-12">
-        <div className="max-w-4xl mx-auto px-4">
+      <section
+        id="testimonials-section"
+        className="bg-black py-12 overflow-hidden"
+      >
+        <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-white text-center mb-8">
             Ils nous font confiance
           </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Avis 1 */}
-            <div className="bg-gray-900 rounded-xl p-6 flex flex-col items-center shadow-lg">
-              <img
-                src="https://randomuser.me/api/portraits/men/32.jpg"
-                alt="avatar"
-                className="w-16 h-16 rounded-full mb-4"
-              />
-              <h3 className="text-lg font-semibold text-white mb-2">
-                Lucas M.
-              </h3>
-              <p className="text-gray-300 text-center mb-3">
-                "Interface intuitive, j'ai pu économiser sans stress. Je
-                recommande !"
-              </p>
-              <div className="flex space-x-1">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className="text-yellow-400">
-                    ★
-                  </span>
-                ))}
+          <div
+            className="flex gap-4 transition-transform duration-300 ease-out"
+            style={{
+              transform: `translateX(-${testimonialsOffset}px)`,
+              width: `${testimonials.length * 280}px`, // Largeur réduite pour chaque avis
+            }}
+          >
+            {testimonials.map((testimonial) => (
+              <div
+                key={testimonial.id}
+                className="bg-gray-900 rounded-xl p-4 flex flex-col items-center shadow-lg min-w-[260px] max-w-[260px] flex-shrink-0"
+              >
+                <img
+                  src={testimonial.avatar}
+                  alt="avatar"
+                  className="w-12 h-12 rounded-full mb-3"
+                />
+                <h3 className="text-base font-semibold text-white mb-2 text-center">
+                  {testimonial.name}
+                </h3>
+                <p className="text-gray-300 text-center mb-3 text-sm leading-relaxed">
+                  "{testimonial.text}"
+                </p>
+                <div className="flex space-x-1">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <span key={i} className="text-yellow-400 text-sm">
+                      ★
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-            {/* Avis 2 */}
-            <div className="bg-gray-900 rounded-xl p-6 flex flex-col items-center shadow-lg">
-              <img
-                src="https://randomuser.me/api/portraits/women/44.jpg"
-                alt="avatar"
-                className="w-16 h-16 rounded-full mb-4"
-              />
-              <h3 className="text-lg font-semibold text-white mb-2">
-                Sophie L.
-              </h3>
-              <p className="text-gray-300 text-center mb-3">
-                "La sécurité avant tout, et des objectifs clairs. Parfait pour
-                débuter dans la crypto !"
-              </p>
-              <div className="flex space-x-1">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className="text-yellow-400">
-                    ★
-                  </span>
-                ))}
-              </div>
-            </div>
-            {/* Avis 3 */}
-            <div className="bg-gray-900 rounded-xl p-6 flex flex-col items-center shadow-lg">
-              <img
-                src="https://randomuser.me/api/portraits/men/65.jpg"
-                alt="avatar"
-                className="w-16 h-16 rounded-full mb-4"
-              />
-              <h3 className="text-lg font-semibold text-white mb-2">
-                Yanis D.
-              </h3>
-              <p className="text-gray-300 text-center mb-3">
-                "J'adore suivre ma progression, l'app est motivante et simple
-                d'utilisation."
-              </p>
-              <div className="flex space-x-1">
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} className="text-yellow-400">
-                    ★
-                  </span>
-                ))}
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -316,7 +378,7 @@ const Hero = ({ setShowHero }) => {
                 </a>
               </div>
               <p className="text-gray-300">
-                Pour s’impliquer dans la communauté, poser des questions et
+                Pour s'impliquer dans la communauté, poser des questions et
                 partager des astuces.
               </p>
             </div>

@@ -363,11 +363,6 @@ export const DepositForm = () => {
                     }
                   />
                   <div className="font-medium text-sm">{metadata.symbol}</div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {balance
-                      ? `${parseFloat(balance.formatted).toFixed(4)}`
-                      : "0.0000"}
-                  </div>
                 </div>
               </button>
             );

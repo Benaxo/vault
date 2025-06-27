@@ -22,7 +22,7 @@ const ParallaxDivider = () => (
           id="parallax-gradient"
           x1="0"
           y1="0"
-          x2="1440"
+          x2="1400"
           y2="60"
           gradientUnits="userSpaceOnUse"
         >
